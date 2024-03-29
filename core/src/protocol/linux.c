@@ -4,6 +4,7 @@
 #include <lib/mem.h>
 #include <lib/math.h>
 #include <memory/pmm.h>
+#include <drivers/acpi.h>
 
 #define LINUX_IMAGE_SIGNATURE 0x53726448
 
@@ -271,8 +272,22 @@ static_assert(sizeof(boot_params_t) == PMM_PAGE_SIZE);
 
 [[noreturn]] void linux_handoff(void *kernel_entry, void *boot_params);
 
-[[noreturn]] void protocol_linux(vfs_node_t *kernel_node, vfs_node_t *ramdisk_node, char *cmd, acpi_rsdp_t *rsdp, e820_entry_t e820[], size_t e820_size, fb_t fb) {
+[[noreturn]] void protocol_linux(config_t *config, vfs_node_t *kernel_node, fb_t fb) {
+    // CMD line
+    char *cmd = config_read_string(config, "CMD");
     if(cmd == NULL) cmd = "";
+
+    // Ramdisk
+    char *ramdisk_path = config_read_string(config, "INITRD");
+    if(ramdisk_path == NULL) log_panic("CORE", "No initrd path provided in config");
+    vfs_node_t *ramdisk_node = vfs_lookup(kernel_node->vfs, ramdisk_path);
+    if(ramdisk_node == NULL) log_panic("CORE", "Initrd was not present at \"%s\"", ramdisk_path);
+
+    config_free(config);
+
+    // RSDP
+    acpi_rsdp_t *rsdp = acpi_find_rsdp();
+    if(!rsdp) log_panic("PROTO_LINUX", "Could not locate RSDP");
 
     // Validate signature
     uint32_t signature;
@@ -316,13 +331,14 @@ static_assert(sizeof(boot_params_t) == PMM_PAGE_SIZE);
     boot_params->screen_info.blue_size = fb.mask_blue_size;
     boot_params->screen_info.blue_pos = fb.mask_blue_position;
 
-    for(size_t i = 0; i < e820_size; i++) {
-        if(i >= 128) log_panic("PROTO_LINUX", "Cannot fit e820 into boot_params");
-        boot_params->e820_table[i].type = e820[i].type;
-        boot_params->e820_table[i].size = e820[i].length;
-        boot_params->e820_table[i].address = e820[i].address;
-        boot_params->e820_entries++;
-    }
+    // TODO: Get clean memory map
+    // for(size_t i = 0; i < e820_size; i++) {
+    //     if(i >= 128) log_panic("PROTO_LINUX", "Cannot fit e820 into boot_params");
+    //     boot_params->e820_table[i].type = e820[i].type;
+    //     boot_params->e820_table[i].size = e820[i].length;
+    //     boot_params->e820_table[i].address = e820[i].address;
+    //     boot_params->e820_entries++;
+    // }
 
     // Load kernel
     vfs_attr_t kernel_attr;

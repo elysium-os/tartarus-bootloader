@@ -1,4 +1,4 @@
-extern core
+extern entry
 extern g_gdtr
 
 bits 16
@@ -81,7 +81,7 @@ entry_protected:
 
     mov bp, sp
 
-    jmp core
+    jmp entry
 
 bits 16
 

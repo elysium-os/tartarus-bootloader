@@ -1,6 +1,6 @@
 #pragma once
 #include <fs/vfs.h>
-#include <dev/disk.h>
+#include <drivers/disk.h>
 
 typedef enum {
     FAT_TYPE_12,

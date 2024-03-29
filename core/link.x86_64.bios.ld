@@ -11,7 +11,7 @@ PHDRS
 SECTIONS
 {
     . = 0xA000;
-    __tartarus_start = .;
+    ld_tartarus_start = .;
 
     .early : {
         *(.entry)
@@ -36,5 +36,5 @@ SECTIONS
     } :data
 
     . = ALIGN(0x1000);
-    __tartarus_end = .;
+    ld_tartarus_end = .;
 }

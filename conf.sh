@@ -16,6 +16,8 @@ while [[ $# -gt 0 ]]; do
             case $TARGET in
                 x86_64-bios)
                     ;;
+                x86_64-uefi64)
+                    ;;
                 *)
                     echo "Unknown target \"$TARGET\""
                     exit 1
@@ -62,6 +64,7 @@ echo "export SRC := $SRCDIR" >> $CONFMK
 echo "export BUILD := $DSTDIR/build" >> $CONFMK
 echo "export LIBGCC_DIR := $LIBGCC_DIR" >> $CONFMK
 
+echo "export GIT := git" >> $CONFMK
 echo "export ASMC := nasm" >> $CONFMK
 echo "export CC := x86_64-elf-gcc" >> $CONFMK
 echo "export LD := x86_64-elf-ld" >> $CONFMK

@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <dev/acpi.h>
+#include <drivers/acpi.h>
 
 typedef struct {
     uint8_t acpi_id;
