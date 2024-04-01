@@ -1,7 +1,7 @@
-#include "fb.h"
-#include <sys/efi.uefi.h>
+#include <hal/fb.h>
+#include <hal/uefi/efi.h>
 
-bool fb_acquire(uint32_t target_width, uint32_t target_height, bool strict_rgb, fb_t *out) {
+bool hal_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict_rgb, fb_t *out) {
     EFI_STATUS status;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;

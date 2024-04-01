@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <cpuid.h>
 #include <common/log.h>
-#include <sys/efi.uefi.h>
-#include <sys/msr.x86_64.h>
+#include <hal/uefi/efi.h>
+#include <hal/x86_64/msr.h>
 
 #define CPUID_NX (1 << 20)
 #define MSR_EFER 0xC0000080

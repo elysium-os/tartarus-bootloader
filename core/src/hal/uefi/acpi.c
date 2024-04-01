@@ -1,5 +1,5 @@
-#include "acpi.h"
-#include <sys/efi.uefi.h>
+#include <hal/acpi.h>
+#include <hal/uefi/efi.h>
 
 static bool compare_guid(EFI_GUID a, EFI_GUID b) {
     bool data4_match = true;
@@ -16,7 +16,7 @@ static uintptr_t find_table(EFI_GUID guid) {
     return 0;
 }
 
-acpi_rsdp_t *acpi_find_rsdp() {
+acpi_rsdp_t *hal_acpi_find_rsdp() {
     EFI_GUID v1 = ACPI_TABLE_GUID;
     EFI_GUID v2 = ACPI_20_TABLE_GUID;
     uintptr_t address = find_table(v2);

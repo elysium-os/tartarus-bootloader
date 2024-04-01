@@ -21,7 +21,7 @@ endif
 ifeq ($(TARGET), x86_64-uefi64)
     C_SOURCES += $(shell find src/hal/uefi/ -type f -name "*.c")
     ASM_SOURCES += $(shell find src/hal/uefi/ -type f -name "*.asm")
-    C_SOURCES += $(shell find src/hal/x86_64-uef/ -type f -name "*.c")
+    C_SOURCES += $(shell find src/hal/x86_64-uefi/ -type f -name "*.c")
     ASM_SOURCES += $(shell find src/hal/x86_64-uefi/ -type f -name "*.asm")
 endif
 
