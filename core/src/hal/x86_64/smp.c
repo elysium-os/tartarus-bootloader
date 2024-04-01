@@ -1,13 +1,13 @@
-#include "smp.x86_64.h"
+#include "smp.h"
 #include <cpuid.h>
-#include <common/log.h>
 #include <lib/mem.h>
+#include <common/log.h>
 #include <memory/pmm.h>
 #include <memory/heap.h>
-#include <sys/lapic.x86_64.h>
-#include <sys/gdt.x86_64.h>
-#include <sys/cpu.x86_64.h>
-#include <sys/tsc.x86_64.h>
+#include <hal/x86_64/lapic.h>
+#include <hal/x86_64/gdt.h>
+#include <hal/x86_64/cpu.h>
+#include <hal/x86_64/tsc.h>
 
 #define CYCLES_10MIL 10000000
 

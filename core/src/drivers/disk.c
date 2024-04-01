@@ -1,9 +1,10 @@
 #include "disk.h"
-#include <common/log.h>
 #include <lib/math.h>
 #include <lib/mem.h>
+#include <common/log.h>
 #include <memory/pmm.h>
 #include <memory/heap.h>
+#include <hal/disk.h>
 
 #define GPT_TYPE_PROTECTIVE 0xEE
 
@@ -54,7 +55,7 @@ static void initialize_gpt_partitions(disk_t *disk, gpt_header_t *header) {
     uint32_t array_sectors = MATH_DIV_CEIL(header->partition_array_count * header->partition_entry_size, disk->sector_size);
     uint32_t buf_size = MATH_DIV_CEIL(array_sectors * disk->sector_size, PMM_PAGE_SIZE);
     void *buf = pmm_alloc(PMM_AREA_CONVENTIONAL, buf_size);
-    if(!disk_read_sector(disk, header->partition_array_lba, array_sectors, buf)) {
+    if(!hal_disk_read_sector(disk, header->partition_array_lba, array_sectors, buf)) {
         for(uint32_t i = 0; i < header->partition_array_count; i++) {
             gpt_entry_t *entry = (gpt_entry_t *) ((uintptr_t) buf + i * header->partition_entry_size);
             bool is_empty = true;
@@ -82,10 +83,10 @@ void disk_initialize_partitions(disk_t *disk) {
     int buf_size = MATH_DIV_CEIL(disk->sector_size, PMM_PAGE_SIZE);
     void *buf = pmm_alloc(PMM_AREA_CONVENTIONAL, buf_size);
 
-    if(!disk_read_sector(disk, 0, 1, buf)) {
+    if(!hal_disk_read_sector(disk, 0, 1, buf)) {
         mbr_t *mbr = (mbr_t *) ((uintptr_t) buf + 440);
         if(mbr->entries[0].type == GPT_TYPE_PROTECTIVE) {
-            disk_read_sector(disk, mbr->entries[0].start_lba, 1, buf);
+            hal_disk_read_sector(disk, mbr->entries[0].start_lba, 1, buf);
             initialize_gpt_partitions(disk, (gpt_header_t *) buf);
         } else {
             log_warning("PARTITION", "Ignoring drive %#llx because it is partitioned with a legacy MBR", (uint64_t) disk->id);
@@ -104,7 +105,7 @@ void disk_read(disk_part_t *part, uint64_t offset, uint64_t count, void *dest) {
     uint64_t buf_size = MATH_DIV_CEIL(part->disk->sector_size * sect_count, PMM_PAGE_SIZE);
     void *buf = pmm_alloc(PMM_AREA_STANDARD, buf_size);
 
-    if(disk_read_sector(part->disk, part->lba + lba_offset, sect_count, buf)) log_panic("DISK", "Read failed");
+    if(hal_disk_read_sector(part->disk, part->lba + lba_offset, sect_count, buf)) log_panic("DISK", "Read failed");
     memcpy(dest, (void *) (buf + sect_offset), count);
 
     pmm_free(buf, buf_size);

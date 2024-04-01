@@ -1,4 +1,4 @@
-#include "tsc.x86_64.h"
+#include "tsc.h"
 
 static inline uint64_t read() {
     uint32_t high, low;

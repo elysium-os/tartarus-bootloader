@@ -29,5 +29,4 @@ typedef struct {
     uint32_t creator_revision;
 } __attribute__((packed)) acpi_sdt_header_t;
 
-acpi_rsdp_t *acpi_find_rsdp();
 acpi_sdt_header_t *acpi_find_table(acpi_rsdp_t *rsdp, const char *signature);

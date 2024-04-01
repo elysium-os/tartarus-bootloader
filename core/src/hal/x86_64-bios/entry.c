@@ -4,8 +4,8 @@
 #include <common/log.h>
 #include <core.h>
 #include <memory/pmm.h>
-#include <sys/int.x86_64.bios.h>
-#include <sys/msr.x86_64.h>
+#include <hal/x86_64/msr.h>
+#include <hal/x86_64-bios/int.h>
 
 #define E820_MAX 512
 #define E820_MAGIC_NUMBER 0x534D4150

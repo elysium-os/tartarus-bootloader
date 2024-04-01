@@ -1,10 +1,10 @@
 #include "elf.h"
-#include <common/log.h>
 #include <lib/mem.h>
 #include <lib/math.h>
+#include <common/log.h>
 #include <memory/pmm.h>
-#include <memory/vmm.h>
 #include <memory/heap.h>
+#include <hal/vmm.h>
 
 #define LITTLE_ENDIAN 1
 #define CLASS64 2
@@ -113,7 +113,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
 
         elf64_addr_t aligned_vaddr = program_header.vaddr - program_header.vaddr % PMM_PAGE_SIZE;
         elf64_xword_t aligned_size = (program_header.memsz + (program_header.vaddr % PMM_PAGE_SIZE) + PMM_PAGE_SIZE - 1) / PMM_PAGE_SIZE * PMM_PAGE_SIZE;
-        vmm_map(address_space, (uintptr_t) addr, aligned_vaddr, aligned_size, program_header.flags & 0b111);
+        hal_vmm_map(address_space, (uintptr_t) addr, aligned_vaddr, aligned_size, program_header.flags & 0b111);
 
         if(program_header.type != PT_LOAD) continue;
         if(file->ops->read(file, addr, program_header.offset, program_header.filesz) != program_header.filesz) {

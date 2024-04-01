@@ -1,7 +1,7 @@
-#include "lapic.x86_64.h"
+#include "lapic.h"
 #include <cpuid.h>
 #include <memory/pmm.h>
-#include <sys/msr.x86_64.h>
+#include <hal/x86_64/msr.h>
 
 #define CPUID_APIC (1 << 9)
 

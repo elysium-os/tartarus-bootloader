@@ -1,19 +1,20 @@
 #include "core.h"
 #include <stdint.h>
+#include <lib/str.h>
 #include <common/log.h>
 #include <common/config.h>
-#include <common/fb.h>
-#include <lib/str.h>
 #include <drivers/disk.h>
 #include <fs/vfs.h>
 #include <fs/fat.h>
 #include <protocol/protocol.h>
+#include <hal/fb.h>
+#include <hal/disk.h>
 
 #define REGISTER_PROTOCOL(PROTOCOL) if(strcmp(protocol, #PROTOCOL) == 0) { protocol_##PROTOCOL(config, kernel_node, fb); __builtin_unreachable(); }
 
 [[noreturn]] void core() {
     // Initialize disk
-    disk_initialize();
+    hal_disk_initialize();
     int disk_count = 0;
     for(disk_t *disk = g_disks; disk != NULL; disk = disk->next) disk_count++;
     log("CORE", "Initialized disks (%i disks)", disk_count);
@@ -45,7 +46,7 @@
     log("CORE", "Screen size is presumed to be %ix%i", scrw, scrh);
 
     fb_t fb;
-    if(fb_acquire(scrw, scrh, false, &fb)) log_panic("CORE", "Failed to retrieve framebuffer");
+    if(hal_fb_acquire(scrw, scrh, false, &fb)) log_panic("CORE", "Failed to retrieve framebuffer");
     log("CORE", "Acquired framebuffer (%ux%u)", fb.width, fb.height);
 
     // Protocol
@@ -53,7 +54,7 @@
     if(protocol == NULL) log_panic("CORE", "No protocol defined in config");
     log("CORE", "Protocol is %s", protocol);
 
-    REGISTER_PROTOCOL(linux);
+    // REGISTER_PROTOCOL(linux);
     REGISTER_PROTOCOL(tartarus);
 
     config_free(config);

@@ -1,9 +1,9 @@
-#include "vmm.h"
+#include <hal/vmm.h>
 #include <stddef.h>
-#include <common/log.h>
 #include <lib/mem.h>
+#include <common/log.h>
 #include <memory/pmm.h>
-#include <sys/cpu.x86_64.h>
+#include <hal/x86_64/cpu.h>
 
 #define LEVELS 4
 
@@ -45,7 +45,7 @@ static void map_page(uint64_t *pml4, uint64_t paddr, uint64_t vaddr, pt_size_t s
     if(nx) current_table[indexes[highest_index]] |= PT_NX;
 }
 
-void vmm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t length, uint8_t flags) {
+void hal_vmm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t length, uint8_t flags) {
     uint64_t offset = 0;
     while(offset < length) {
         bool large = paddr % PMM_PAGE_SIZE_LARGE == 0 && vaddr % PMM_PAGE_SIZE_LARGE == 0 && length - offset >= PMM_PAGE_SIZE_LARGE;
@@ -57,7 +57,7 @@ void vmm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t lengt
     }
 }
 
-void *vmm_create_address_space() {
+void *hal_vmm_create_address_space() {
     void *pml4 = pmm_alloc(PMM_AREA_STANDARD, 1);
     memset(pml4, 0, PMM_PAGE_SIZE);
     return pml4;

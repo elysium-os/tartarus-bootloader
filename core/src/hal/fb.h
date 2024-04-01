@@ -16,4 +16,4 @@ typedef struct {
     uint8_t mask_blue_position;
 } fb_t;
 
-bool fb_acquire(uint32_t target_width, uint32_t target_height, bool strict_rgb, fb_t *out);
+bool hal_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict_rgb, fb_t *out);

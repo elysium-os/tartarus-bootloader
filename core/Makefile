@@ -6,27 +6,23 @@ ifneq (, $(filter $(TARGET), x86_64-bios x86_64-uefi64))
 endif
 
 # Sources
-C_SOURCES := $(shell find src -type f -regex "src\/[^.]*?.c")
+C_SOURCES := $(shell find src/ -type f -name "*.c" -not -path "src/hal/*")
 
 ifeq ($(ARCH), x86_64)
-    C_SOURCES += $(shell find src -type f -name *.x86_64.c)
-    ASM_SOURCES := $(shell find src -type f -name *.x86_64.asm)
+    C_SOURCES += $(shell find src/hal/x86_64/ -type f -name "*.c")
+    ASM_SOURCES := $(shell find src/hal/x86_64/ -type f -name "*.asm")
 endif
 
 ifeq ($(TARGET), x86_64-bios)
-    C_SOURCES += $(shell find src -type f -name *.x86_64.bios.c)
-    ASM_SOURCES += $(shell find src -type f -name *.x86_64.bios.asm)
+    C_SOURCES += $(shell find src/hal/x86_64-bios/ -type f -name "*.c")
+    ASM_SOURCES += $(shell find src/hal/x86_64-bios/ -type f -name "*.asm")
 endif
 
 ifeq ($(TARGET), x86_64-uefi64)
-    C_SOURCES += $(shell find src -type f -name *.uefi.c)
-    ASM_SOURCES += $(shell find src -type f -name *.uefi.asm)
-    C_SOURCES += $(shell find src -type f -name *.uefi64.c)
-    ASM_SOURCES += $(shell find src -type f -name *.uefi64.asm)
-    C_SOURCES += $(shell find src -type f -name *.x86_64.uefi.c)
-    ASM_SOURCES += $(shell find src -type f -name *.x86_64.uefi.asm)
-    C_SOURCES += $(shell find src -type f -name *.x86_64.uefi64.c)
-    ASM_SOURCES += $(shell find src -type f -name *.x86_64.uefi64.asm)
+    C_SOURCES += $(shell find src/hal/uefi/ -type f -name "*.c")
+    ASM_SOURCES += $(shell find src/hal/uefi/ -type f -name "*.asm")
+    C_SOURCES += $(shell find src/hal/x86_64-uef/ -type f -name "*.c")
+    ASM_SOURCES += $(shell find src/hal/x86_64-uefi/ -type f -name "*.asm")
 endif
 
 ASM_OBJ := $(patsubst %.asm,$(BUILD)/core/%_asm.o,$(ASM_SOURCES))

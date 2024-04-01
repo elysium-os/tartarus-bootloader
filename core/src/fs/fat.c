@@ -1,10 +1,11 @@
 #include "fat.h"
 #include <stdint.h>
-#include <common/log.h>
 #include <lib/str.h>
 #include <lib/mem.h>
 #include <lib/math.h>
+#include <common/log.h>
 #include <memory/heap.h>
+#include <hal/disk.h>
 
 #define FS_DATA(VFS) ((fs_data_t *) (VFS)->data)
 #define NODE_DATA(NODE) ((node_data_t *) (NODE)->data)
@@ -153,7 +154,8 @@ static uint32_t next_cluster(fs_data_t *fs_data, uint32_t cluster) {
     uint64_t offset = cluster_addr % fs_data->partition->disk->sector_size;
     if(fs_data->cache_lba != lba) {
         fs_data->cache_lba = lba;
-        if(disk_read_sector(fs_data->partition->disk, fs_data->partition->lba + lba, 1, fs_data->cache)) log_panic("FAT", "Failed to read sector from disk");
+        // TODO: use disk_read probably
+        if(hal_disk_read_sector(fs_data->partition->disk, fs_data->partition->lba + lba, 1, fs_data->cache)) log_panic("FAT", "Failed to read sector from disk");
     }
     switch(fs_data->fat_meta.type) {
         case FAT_TYPE_12:

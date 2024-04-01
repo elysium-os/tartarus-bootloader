@@ -1,4 +1,4 @@
-#include "gdt.x86_64.h"
+#include "gdt.h"
 
 gdt_entry_t g_gdt[] = {
     {},

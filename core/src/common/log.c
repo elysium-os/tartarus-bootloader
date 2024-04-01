@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <lib/format.h>
-#include <sys/cpu.h>
+#include <hal/cpu.h>
 
 static log_sink_t g_sink = NULL;
 
@@ -47,6 +47,6 @@ void log_warning(const char *tag, const char *fmt, ...) {
     va_start(list, str);
     common_log("PANIC", tag, fmt, list);
     va_end(list);
-    for(;;) cpu_halt();
+    for(;;) hal_cpu_halt();
     __builtin_unreachable();
 }

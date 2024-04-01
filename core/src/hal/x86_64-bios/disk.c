@@ -1,10 +1,10 @@
-#include "disk.h"
+#include <hal/disk.h>
 #include <lib/mem.h>
 #include <lib/math.h>
 #include <memory/pmm.h>
 #include <memory/heap.h>
-#include <sys/tsc.x86_64.h>
-#include <sys/int.x86_64.bios.h>
+#include <hal/x86_64/tsc.h>
+#include <hal/x86_64-bios/int.h>
 
 #define EFLAGS_CF (1 << 0)
 
@@ -102,7 +102,7 @@ static uint16_t estimate_optimal_transfer_size(disk_t *disk) {
     return fastest_size;
 }
 
-void disk_initialize() {
+void hal_disk_initialize() {
     for(int i = 0x80; i < 0xFF; i++) {
         ext_read_drive_params_t params = { .size = sizeof(ext_read_drive_params_t) };
         int_regs_t regs = {
@@ -126,11 +126,11 @@ void disk_initialize() {
 
         int buf_size = MATH_DIV_CEIL(disk->sector_size, PMM_PAGE_SIZE);
         void *buf = pmm_alloc(PMM_AREA_CONVENTIONAL, buf_size);
-        if(buf_size == 0 || disk_read_sector(disk, 0, buf_size, buf)) {
+        if(buf_size == 0 || hal_disk_read_sector(disk, 0, buf_size, buf)) {
             heap_free(disk);
             continue;
         }
-        disk->writable = !disk_write_sector(disk, 0, buf_size, buf);
+        disk->writable = !hal_disk_write_sector(disk, 0, buf_size, buf);
         disk->partitions = 0;
         disk_initialize_partitions(disk);
         disk->optimal_transfer_size = estimate_optimal_transfer_size(disk);
@@ -141,7 +141,7 @@ void disk_initialize() {
     }
 }
 
-bool disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
+bool hal_disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
     disk_address_packet_t dap = {
         .size = sizeof(disk_address_packet_t)
     };
@@ -172,7 +172,7 @@ bool disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *d
     return false;
 }
 
-bool disk_write_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
+bool hal_disk_write_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
     disk_address_packet_t dap = {
         .size = sizeof(disk_address_packet_t),
         .sector_count = 1,

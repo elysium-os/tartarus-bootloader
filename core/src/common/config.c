@@ -1,8 +1,8 @@
 #include "config.h"
 #include <stddef.h>
-#include <common/log.h>
 #include <lib/mem.h>
 #include <lib/str.h>
+#include <common/log.h>
 #include <memory/heap.h>
 
 #define IS_WHITESPACE(CHAR) ((CHAR) == ' ' || (CHAR) == '\t')

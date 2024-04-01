@@ -21,8 +21,5 @@ typedef struct disk {
 
 extern disk_t *g_disks;
 
-void disk_initialize();
 void disk_initialize_partitions(disk_t *disk);
-bool disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest);
-bool disk_write_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src);
 void disk_read(disk_part_t *part, uint64_t offset, uint64_t count, void *dest);
