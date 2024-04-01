@@ -14,7 +14,7 @@ typedef struct disk {
     uint64_t sector_count;
     uint16_t sector_size;
     uint16_t optimal_transfer_size;
-    bool writable;
+    bool read_only;
     struct disk_part *partitions;
     struct disk *next;
 } disk_t;

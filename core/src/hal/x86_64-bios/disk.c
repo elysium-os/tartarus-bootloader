@@ -130,7 +130,7 @@ void hal_disk_initialize() {
             heap_free(disk);
             continue;
         }
-        disk->writable = !hal_disk_write_sector(disk, 0, buf_size, buf);
+        disk->read_only = hal_disk_write_sector(disk, 0, buf_size, buf);
         disk->partitions = 0;
         disk_initialize_partitions(disk);
         disk->optimal_transfer_size = estimate_optimal_transfer_size(disk);
