@@ -73,8 +73,8 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
 
     ap_info_t *ap_info = (ap_info_t *) (reserved_init_page + apinit_size);
     ap_info->pml4 = (uintptr_t) address_space;
-    ap_info->gdtr_limit = g_gdtr.limit;
-    ap_info->gdtr_base = g_gdtr.base;
+    ap_info->gdtr_limit = g_gdt_limit;
+    ap_info->gdtr_base = (uintptr_t) g_gdt;
     ap_info->set_nx = g_cpu_nx_support;
 
     size_t wow_count = 0;

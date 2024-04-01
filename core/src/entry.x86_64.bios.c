@@ -82,7 +82,7 @@ static void log_sink(char c) {
     log("CORE", "Initialized physical memory (%i memory map entries)", e820_size);
 
     // Protect initial stack & tartarus
-    // TODO: the stack claim if flimsy
+    // TODO: the stack claim is flimsy
     if(pmm_convert(PMM_MAP_TYPE_FREE, PMM_MAP_TYPE_ALLOCATED, 0x1000, 0x7000)) log_panic("CORE", "Failed to claim stack memory");
     if(pmm_convert(PMM_MAP_TYPE_FREE, PMM_MAP_TYPE_ALLOCATED, (uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start)) log_panic("CORE", "Failed to claim kernel memory");
 

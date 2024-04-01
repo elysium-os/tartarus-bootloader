@@ -10,9 +10,5 @@ typedef struct {
     uint8_t upper_base;
 } __attribute__((packed)) gdt_entry_t;
 
-typedef struct {
-    uint16_t limit;
-    uint32_t base;
-} __attribute__((packed)) gdt_descriptor_t;
-
-extern gdt_descriptor_t g_gdtr;
+extern gdt_entry_t g_gdt[];
+extern uint16_t g_gdt_limit;
