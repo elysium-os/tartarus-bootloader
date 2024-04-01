@@ -100,7 +100,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
 
     elf64_xword_t size = highest_vaddr - lowest_vaddr;
     elf64_xword_t page_count = MATH_DIV_CEIL(size, PMM_PAGE_SIZE);
-    void *paddr = pmm_alloc(PMM_AREA_MAX, page_count);
+    void *paddr = pmm_alloc(PMM_AREA_STANDARD, page_count);
     for(elf64_half_t i = 0; i < header.program_header_entry_count; i++) {
         elf64_program_header_t program_header;
         if(file->ops->read(file, &program_header, header.program_header_offset + header.program_header_entry_size * i, header.program_header_entry_size) != header.program_header_entry_size) {

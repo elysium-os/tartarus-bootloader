@@ -31,7 +31,7 @@ static void map_page(uint64_t *pml4, uint64_t paddr, uint64_t vaddr, pt_size_t s
     int highest_index = LEVELS - (size == PT_SIZE_LARGE ? (size == PT_SIZE_HUGE ? 3 : 2) : 1);
     for(int i = 0; i < highest_index; i++) {
         if(!(current_table[indexes[i]] & PT_PRESENT)) {
-            uint64_t *new_table = pmm_alloc_page(PMM_AREA_MAX);
+            uint64_t *new_table = pmm_alloc(PMM_AREA_STANDARD, 1);
             memset(new_table, 0, PMM_PAGE_SIZE);
             current_table[indexes[i]] = ((uint64_t) (uintptr_t) new_table & PT_ADDRESS_MASK) | PT_PRESENT;
         }
@@ -58,7 +58,7 @@ void vmm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t lengt
 }
 
 void *vmm_create_address_space() {
-    void *pml4 = pmm_alloc_page(PMM_AREA_MAX);
+    void *pml4 = pmm_alloc(PMM_AREA_STANDARD, 1);
     memset(pml4, 0, PMM_PAGE_SIZE);
     return pml4;
 }

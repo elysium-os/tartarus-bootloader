@@ -68,24 +68,23 @@ static void log_sink(char c) {
 
     // Setup physical memory
     for(int i = 0; i < e820_size; i++) {
-        tartarus_memory_map_type_t type;
+        pmm_map_type_t type;
         switch(e820[i].type) {
-            case E820_TYPE_USABLE: type = TARTARUS_MEMORY_MAP_TYPE_USABLE; break;
-            case E820_TYPE_ACPI_RECLAIMABLE: type = TARTARUS_MEMORY_MAP_TYPE_ACPI_RECLAIMABLE; break;
-            case E820_TYPE_ACPI_NVS: type = TARTARUS_MEMORY_MAP_TYPE_ACPI_NVS; break;
-            case E820_TYPE_BAD: type = TARTARUS_MEMORY_MAP_TYPE_BAD; break;
+            case E820_TYPE_USABLE: type = PMM_MAP_TYPE_FREE; break;
+            case E820_TYPE_ACPI_RECLAIMABLE: type = PMM_MAP_TYPE_ACPI_RECLAIMABLE; break;
+            case E820_TYPE_ACPI_NVS: type = PMM_MAP_TYPE_ACPI_NVS; break;
+            case E820_TYPE_BAD: type = PMM_MAP_TYPE_BAD; break;
             case E820_TYPE_RESERVED:
-            default: type = TARTARUS_MEMORY_MAP_TYPE_RESERVED; break;
+            default: type = PMM_MAP_TYPE_RESERVED; break;
         }
-        pmm_init_add((tartarus_memory_map_entry_t) { .base = e820[i].address, .length = e820[i].length, .type = type });
+        pmm_init_add(e820[i].address, e820[i].length, type);
     }
-    pmm_init_sanitize();
     log("CORE", "Initialized physical memory (%i memory map entries)", e820_size);
 
     // Protect initial stack & tartarus
     // TODO: the stack claim if flimsy
-    if(pmm_convert(TARTARUS_MEMORY_MAP_TYPE_USABLE, TARTARUS_MEMORY_MAP_TYPE_BOOT_RECLAIMABLE, 0x1000, 0x7000)) log_panic("CORE", "Failed to claim stack memory");
-    if(pmm_convert(TARTARUS_MEMORY_MAP_TYPE_USABLE, TARTARUS_MEMORY_MAP_TYPE_BOOT_RECLAIMABLE, (uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start)) log_panic("CORE", "Failed to claim kernel memory");
+    if(pmm_convert(PMM_MAP_TYPE_FREE, PMM_MAP_TYPE_ALLOCATED, 0x1000, 0x7000)) log_panic("CORE", "Failed to claim stack memory");
+    if(pmm_convert(PMM_MAP_TYPE_FREE, PMM_MAP_TYPE_ALLOCATED, (uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start)) log_panic("CORE", "Failed to claim kernel memory");
 
     core();
     __builtin_unreachable();

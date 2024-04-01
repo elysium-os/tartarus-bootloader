@@ -36,9 +36,6 @@ bits 32
     mov fs, eax
     mov gs, eax
 
-    mov esp, [off(boot_info.stack)]                         ; Set ESP to the 4k stack
-    mov ebp, esp                                            ; Set EBP to ESP
-
     xor ax, ax
     lldt ax                                                 ; Clear LDT
 
@@ -68,6 +65,9 @@ bits 32
 
 .long:
 bits 64
+    mov rsp, [off(boot_info.stack)]                         ; Set RSP to the 4k stack
+    mov rbp, rsp
+
     cmp byte [off(boot_info.set_nx)], 0
     je .noxd
     mov ecx, 0xC0000080
@@ -100,7 +100,7 @@ boot_info:
     .lapic_id: db 0
     .pml4: dd 0
     .wait_on_address: dq 0
-    .stack: dd 0
+    .stack: dq 0
     .gdtr:
         dw 0
         dd 0

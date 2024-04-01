@@ -295,7 +295,7 @@ static_assert(sizeof(boot_params_t) == PMM_PAGE_SIZE);
     if(signature != LINUX_IMAGE_SIGNATURE) log_panic("PROTO_LINUX", "Invalid kernel image signature");
 
     // Setup boot params
-    boot_params_t *boot_params = pmm_alloc(PMM_AREA_MAX, 1);
+    boot_params_t *boot_params = pmm_alloc(PMM_AREA_STANDARD, 1);
     memset(boot_params, 0, PMM_PAGE_SIZE);
 
     size_t setup_header_size = 0;
@@ -353,7 +353,7 @@ static_assert(sizeof(boot_params_t) == PMM_PAGE_SIZE);
             boot_params->setup_header.kernel_alignment = PMM_PAGE_SIZE;
             kernel_addr = 0x100000;
         }
-        if(!pmm_convert(TARTARUS_MEMORY_MAP_TYPE_USABLE, TARTARUS_MEMORY_MAP_TYPE_BOOT_RECLAIMABLE, kernel_addr, MATH_CEIL(kernel_size, PMM_PAGE_SIZE))) break;
+        if(!pmm_convert(PMM_MAP_TYPE_FREE, PMM_MAP_TYPE_ALLOCATED, kernel_addr, MATH_CEIL(kernel_size, PMM_PAGE_SIZE))) break;
         if(boot_params->setup_header.relocatable_kernel == 0) log_panic("PROTO_LINUX", "Unrelocatable kernel cannot be allocated at %#lx", kernel_addr);
     }
     if(kernel_node->ops->read(kernel_node, (void *) kernel_addr, real_mode_kernel_size, kernel_size) != kernel_size) log_panic("PROTO_LINUX", "Failed to load kernel");
@@ -369,7 +369,7 @@ static_assert(sizeof(boot_params_t) == PMM_PAGE_SIZE);
     ramdisk_addr -= aligned_ramdisk_size;
     ramdisk_addr = MATH_FLOOR(ramdisk_addr, PMM_PAGE_SIZE);
     for (; ramdisk_addr != 0; ramdisk_addr -= PMM_PAGE_SIZE) {
-        if(!pmm_convert(TARTARUS_MEMORY_MAP_TYPE_USABLE, TARTARUS_MEMORY_MAP_TYPE_BOOT_RECLAIMABLE, ramdisk_addr, aligned_ramdisk_size)) break;
+        if(!pmm_convert(PMM_MAP_TYPE_FREE, PMM_MAP_TYPE_ALLOCATED, ramdisk_addr, aligned_ramdisk_size)) break;
     }
     if(ramdisk_addr == 0) log_panic("PROTO_LINUX", "Failed to allocate ramdisk");
     if(ramdisk_node->ops->read(ramdisk_node, (void *) ramdisk_addr, 0, ramdisk_attr.size) != ramdisk_attr.size) log_panic("PROTO_LINUX", "Failed to load ramdisk");

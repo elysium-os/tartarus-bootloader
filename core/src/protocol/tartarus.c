@@ -9,7 +9,7 @@
 #define HHDM_OFFSET 0xFFFF800000000000
 #define HHDM_FLAGS (VMM_FLAG_READ | VMM_FLAG_WRITE | VMM_FLAG_EXEC)
 
-[[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel, fb_t fb) {
+[[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel [[maybe_unused]], fb_t fb [[maybe_unused]]) {
     // Setup HHDM
     void *address_space = vmm_create_address_space();
     vmm_map(address_space, PMM_PAGE_SIZE, PMM_PAGE_SIZE, HHDM_MIN_SIZE - PMM_PAGE_SIZE, HHDM_FLAGS);

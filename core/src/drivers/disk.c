@@ -102,7 +102,7 @@ void disk_read(disk_part_t *part, uint64_t offset, uint64_t count, void *dest) {
     uint64_t sect_count = MATH_DIV_CEIL(sect_offset + count, part->disk->sector_size);
 
     uint64_t buf_size = MATH_DIV_CEIL(part->disk->sector_size * sect_count, PMM_PAGE_SIZE);
-    void *buf = pmm_alloc(PMM_AREA_MAX, buf_size);
+    void *buf = pmm_alloc(PMM_AREA_STANDARD, buf_size);
 
     if(disk_read_sector(part->disk, part->lba + lba_offset, sect_count, buf)) log_panic("DISK", "Read failed");
     memcpy(dest, (void *) (buf + sect_offset), count);

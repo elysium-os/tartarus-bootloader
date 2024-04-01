@@ -45,7 +45,7 @@ typedef struct {
     uint8_t lapic_id;
     uint32_t pml4;
     uint64_t wait_on_address;
-    uint32_t stack;
+    uint64_t stack;
     uint16_t gdtr_limit;
     uint32_t gdtr_base;
     uint8_t set_nx;
@@ -78,7 +78,7 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
     ap_info->set_nx = g_cpu_nx_support;
 
     size_t wow_count = 0;
-    void *wow_page = pmm_alloc_page(PMM_AREA_MAX);
+    void *wow_page = pmm_alloc(PMM_AREA_STANDARD, 1);
 
     size_t cpu_count = 0;
     size_t cpu_limit = 0;
@@ -107,7 +107,7 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
                 ap_info->init = 0;
                 ap_info->lapic_id = lapic_record->lapic_id;
                 ap_info->wait_on_address = (uintptr_t) cpus[cpu_count].wake_on_write;
-                ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_EXTENDED, 4) + PMM_PAGE_SIZE * 4;
+                ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, 4) + PMM_PAGE_SIZE * 4;
 
                 lapic_ipi_init(lapic_record->lapic_id);
                 tsc_block(CYCLES_10MIL);
