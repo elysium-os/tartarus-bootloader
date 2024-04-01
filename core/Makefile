@@ -19,6 +19,10 @@ ifeq ($(TARGET), x86_64-bios)
 endif
 
 ifeq ($(TARGET), x86_64-uefi64)
+    C_SOURCES += $(shell find src -type f -name *.uefi.c)
+    ASM_SOURCES += $(shell find src -type f -name *.uefi.asm)
+    C_SOURCES += $(shell find src -type f -name *.uefi64.c)
+    ASM_SOURCES += $(shell find src -type f -name *.uefi64.asm)
     C_SOURCES += $(shell find src -type f -name *.x86_64.uefi.c)
     ASM_SOURCES += $(shell find src -type f -name *.x86_64.uefi.asm)
     C_SOURCES += $(shell find src -type f -name *.x86_64.uefi64.c)
@@ -65,7 +69,7 @@ endif
 
 ifeq ($(TARGET), x86_64-uefi64)
 $(BUILD)/core/tartarus.efi: $(BUILD)/core/tartarus.elf
-	$(OBJCPY) -O binary $< $@
+	$(OBJCOPY) -O binary $< $@
 
 $(BUILD)/core/tartarus.elf: $(EFIDIR)/gnuefi/crt0-efi-x86_64.S.o $(EFIDIR)/gnuefi/reloc_x86_64.c.o $(C_OBJ) $(ASM_OBJ) $(LIBGCC_DIR)/x86_64.a
 	$(LD) $(LDFLAGS) -T"$(EFIDIR)/gnuefi/elf_x86_64_efi.lds" -o $@ $^

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <cpuid.h>
 #include <lib/symbol.h>
 #include <common/log.h>
