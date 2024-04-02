@@ -1,5 +1,8 @@
 #include <lib/container.h>
+#include <lib/math.h>
+#include <lib/mem.h>
 #include <common/log.h>
+#include <memory/pmm.h>
 #include <memory/heap.h>
 #include <hal/disk.h>
 #include <hal/uefi/efi.h>
@@ -44,10 +47,20 @@ void hal_disk_initialize() {
 }
 
 bool hal_disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
-    return EFI_ERROR(UEFI_DISK(disk)->io->ReadBlocks(UEFI_DISK(disk)->io, UEFI_DISK(disk)->io->Media->MediaId, lba, sector_count * disk->sector_size, dest));
+    UINTN buffer_size = sector_count * UEFI_DISK(disk)->io->Media->BlockSize;
+    void *buffer = pmm_alloc(PMM_AREA_STANDARD, MATH_DIV_CEIL(buffer_size, PMM_PAGE_SIZE));
+    EFI_STATUS status = UEFI_DISK(disk)->io->ReadBlocks(UEFI_DISK(disk)->io, UEFI_DISK(disk)->io->Media->MediaId, lba, buffer_size, buffer);
+    memcpy(dest, buffer, buffer_size);
+    pmm_free(buffer, MATH_DIV_CEIL(buffer_size, PMM_PAGE_SIZE));
+    return EFI_ERROR(status);
 }
 
 bool hal_disk_write_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
-    return EFI_ERROR(UEFI_DISK(disk)->io->WriteBlocks(UEFI_DISK(disk)->io, UEFI_DISK(disk)->io->Media->MediaId, lba, sector_count * disk->sector_size, src));
+    UINTN buffer_size = sector_count * UEFI_DISK(disk)->io->Media->BlockSize;
+    void *buffer = pmm_alloc(PMM_AREA_STANDARD, MATH_DIV_CEIL(buffer_size, PMM_PAGE_SIZE));
+    memcpy(buffer, src, buffer_size);
+    EFI_STATUS status = UEFI_DISK(disk)->io->WriteBlocks(UEFI_DISK(disk)->io, UEFI_DISK(disk)->io->Media->MediaId, lba, buffer_size, buffer);
+    pmm_free(buffer, MATH_DIV_CEIL(buffer_size, PMM_PAGE_SIZE));
+    return EFI_ERROR(status);
 }
 

@@ -6,23 +6,22 @@ ifneq (, $(filter $(TARGET), x86_64-bios x86_64-uefi64))
 endif
 
 # Sources
+halsource = $(shell [[ -d src/hal/$(1)/ ]] && find src/hal/$(1)/ -type f -name "*.$(2)")
+
 C_SOURCES := $(shell find src/ -type f -name "*.c" -not -path "src/hal/*")
+C_SOURCES += $(call halsource,$(TARGET),c)
+C_SOURCES += $(call halsource,$(ARCH),c)
 
 ifeq ($(ARCH), x86_64)
-    C_SOURCES += $(shell find src/hal/x86_64/ -type f -name "*.c")
-    ASM_SOURCES := $(shell find src/hal/x86_64/ -type f -name "*.asm")
-endif
-
-ifeq ($(TARGET), x86_64-bios)
-    C_SOURCES += $(shell find src/hal/x86_64-bios/ -type f -name "*.c")
-    ASM_SOURCES += $(shell find src/hal/x86_64-bios/ -type f -name "*.asm")
+    ASM_SOURCES := $(call halsource,x86_64,asm)
+    ASM_SOURCES += $(call halsource,$(TARGET),asm)
 endif
 
 ifeq ($(TARGET), x86_64-uefi64)
-    C_SOURCES += $(shell find src/hal/uefi/ -type f -name "*.c")
-    ASM_SOURCES += $(shell find src/hal/uefi/ -type f -name "*.asm")
-    C_SOURCES += $(shell find src/hal/x86_64-uefi/ -type f -name "*.c")
-    ASM_SOURCES += $(shell find src/hal/x86_64-uefi/ -type f -name "*.asm")
+    C_SOURCES += $(call halsource,uefi,c)
+    ASM_SOURCES += $(call halsource,uefi,asm)
+    C_SOURCES += $(call halsource,$(ARCH)-uefi,c)
+    ASM_SOURCES += $(call halsource,$(ARCH)-uefi,asm)
 endif
 
 ASM_OBJ := $(patsubst %.asm,$(BUILD)/core/%_asm.o,$(ASM_SOURCES))
