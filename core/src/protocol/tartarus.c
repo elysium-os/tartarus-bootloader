@@ -12,6 +12,9 @@
 #include <hal/x86_64/lapic.h>
 #include <hal/x86_64/smp.h>
 #endif
+#ifdef __UEFI
+#include <hal/uefi/efi.h>
+#endif
 
 #define HHDM_MIN_SIZE 0x100000000
 #define HHDM_OFFSET 0xFFFF800000000000
@@ -132,6 +135,22 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
 
     boot_info->module_count = 0;
     boot_info->modules = HHDM_CAST(tartarus_module_t *, NULL);
+
+#ifdef __UEFI
+    // Exit boot services
+    UINTN umap_size = 0;
+    EFI_MEMORY_DESCRIPTOR *umap = NULL;
+    UINTN map_key;
+    UINTN descriptor_size;
+    UINT32 descriptor_version;
+    EFI_STATUS status = g_system_table->BootServices->GetMemoryMap(&umap_size, umap, &map_key, &descriptor_size, &descriptor_version);
+    if(status == EFI_BUFFER_TOO_SMALL) {
+        umap = heap_alloc(umap_size);
+        status = g_system_table->BootServices->GetMemoryMap(&umap_size, umap, &map_key, &descriptor_size, &descriptor_version);
+        if(EFI_ERROR(status)) log_panic("PROTO_TARTARUS", "Unable retrieve the UEFI memory map");
+    }
+    g_system_table->BootServices->ExitBootServices(g_imagehandle, map_key);
+#endif
 
     void *stack = pmm_alloc(PMM_AREA_STANDARD, 16) + 16 * PMM_PAGE_SIZE;
     protocol_tartarus_handoff(kernel->entry, stack, HHDM_CAST(uint64_t, boot_info));
