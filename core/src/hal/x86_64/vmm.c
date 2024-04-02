@@ -45,6 +45,16 @@ static void map_page(uint64_t *pml4, uint64_t paddr, uint64_t vaddr, pt_size_t s
     if(nx) current_table[indexes[highest_index]] |= PT_NX;
 }
 
+void *hal_vmm_create_address_space() {
+    void *pml4 = pmm_alloc(PMM_AREA_STANDARD, 1);
+    memset(pml4, 0, PMM_PAGE_SIZE);
+    return pml4;
+}
+
+void hal_vmm_load_address_space(void *address_space) {
+    asm volatile("mov %0, %%cr3" : : "r" (address_space));
+}
+
 void hal_vmm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t length, uint8_t flags) {
     uint64_t offset = 0;
     while(offset < length) {
@@ -55,10 +65,4 @@ void hal_vmm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t l
         vaddr += large ? PMM_PAGE_SIZE_LARGE : PMM_PAGE_SIZE;
         offset += large ? PMM_PAGE_SIZE_LARGE : PMM_PAGE_SIZE;
     }
-}
-
-void *hal_vmm_create_address_space() {
-    void *pml4 = pmm_alloc(PMM_AREA_STANDARD, 1);
-    memset(pml4, 0, PMM_PAGE_SIZE);
-    return pml4;
 }
