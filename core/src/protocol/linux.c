@@ -287,7 +287,7 @@
 
 //     // RSDP
 //     acpi_rsdp_t *rsdp = acpi_find_rsdp();
-//     if(!rsdp) log_panic("PROTO_LINUX", "Could not locate RSDP");
+//     if(rsdp == NULL) log_panic("PROTO_LINUX", "Could not locate RSDP");
 
 //     // Validate signature
 //     uint32_t signature;

@@ -9,7 +9,7 @@
 #define PMM_PAGE_SIZE_LARGE 0x200000
 
 #define PMM_AREA_CONVENTIONAL ((pmm_map_area_t) { .start = 0, .end = 0xA0000 })
-#define PMM_AREA_LOWMEM ((pmm_map_area_t) { .start = 0xA0000, .end = 0x100000 })
+#define PMM_AREA_LOWMEM ((pmm_map_area_t) { .start = 0, .end = 0x100000 })
 #define PMM_AREA_STANDARD ((pmm_map_area_t) { .start = 0x100000, .end = UINTPTR_MAX })
 #else
 #error Invalid target or missing implementation
