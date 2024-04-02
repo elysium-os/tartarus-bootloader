@@ -80,8 +80,6 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
     size_t wow_count = 0;
     void *wow_page = pmm_alloc(PMM_AREA_STANDARD, 1);
 
-    size_t cpu_count = 0;
-    size_t cpu_limit = 0;
     smp_cpu_t *cpus = NULL;
 
     for(size_t count = sizeof(madt_t); count < madt->sdt_header.length; count += ((madt_record_t *) ((uintptr_t) madt + count))->length) {
@@ -89,24 +87,25 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
         switch(record->type) {
             case MADT_LAPIC:
                 madt_record_lapic_t *lapic_record = (madt_record_lapic_t *) record;
-                if(cpu_count >= cpu_limit) {
-                    cpu_limit += 4;
-                    cpus = heap_realloc(cpus, cpu_limit * sizeof(smp_cpu_t));
-                }
-                cpus[cpu_count].acpi_id = lapic_record->acpi_processor_id;
-                cpus[cpu_count].lapic_id = lapic_record->lapic_id;
-                cpus[cpu_count].wake_on_write = NULL;
-                cpus[cpu_count].is_bsp = false;
+
+                smp_cpu_t *cpu = heap_alloc(sizeof(smp_cpu_t));
+                cpu->next = cpus;
+                cpus = cpu;
+
+                cpu->acpi_id = lapic_record->acpi_processor_id;
+                cpu->lapic_id = lapic_record->lapic_id;
+                cpu->wake_on_write = NULL;
+                cpu->is_bsp = false;
                 if(lapic_record->lapic_id == bsp_id) {
-                    cpus[cpu_count].is_bsp = true;
+                    cpu->is_bsp = true;
                     goto success;
                 }
-                cpus[cpu_count].wake_on_write = heap_alloc(sizeof(uint64_t));
-                *cpus[cpu_count].wake_on_write = 0;
+                cpu->wake_on_write = heap_alloc(sizeof(uint64_t));
+                *cpu->wake_on_write = 0;
 
                 ap_info->init = 0;
                 ap_info->lapic_id = lapic_record->lapic_id;
-                ap_info->wait_on_address = (uintptr_t) cpus[cpu_count].wake_on_write;
+                ap_info->wait_on_address = (uintptr_t) cpu->wake_on_write;
                 ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, 4) + PMM_PAGE_SIZE * 4;
 
                 lapic_ipi_init(lapic_record->lapic_id);
@@ -123,7 +122,6 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
                 break;
                 success:
                 log("SMP", "lapic[%u] initialized", lapic_record->lapic_id);
-                cpu_count++;
                 break;
             case MADT_LX2APIC:
                 log_warning("SMP", "x2APIC is not currently supported, ignoring MADT entry");
