@@ -35,12 +35,6 @@ typedef struct {
 } __TARTARUS_PACKED tartarus_memory_map_entry_t;
 
 typedef struct {
-    __TARTARUS_PTR(void *) address;
-    uint64_t size;
-    uint32_t width, height, pitch;
-} __TARTARUS_PACKED tartarus_fb_t;
-
-typedef struct {
 __TARTARUS_PTR(uint64_t *) wake_on_write;
 #ifdef __X86_64
 uint8_t lapic_id;
@@ -62,15 +56,19 @@ typedef struct {
         uint64_t size;
     } __TARTARUS_PACKED kernel;
     struct {
-        uint64_t base;
+        uint64_t offset;
         uint64_t size;
     } __TARTARUS_PACKED hhdm;
     struct {
         uint16_t size;
         __TARTARUS_PTR(tartarus_memory_map_entry_t *) entries;
     } __TARTARUS_PACKED memory_map;
+    struct {
+        __TARTARUS_PTR(void *) address;
+        uint64_t size;
+        uint32_t width, height, pitch;
+    } __TARTARUS_PACKED framebuffer;
     __TARTARUS_PTR(void *) acpi_rsdp;
-    tartarus_fb_t framebuffer;
     uint8_t bsp_index;
     uint8_t cpu_count;
     __TARTARUS_PTR(tartarus_cpu_t *) cpus;
