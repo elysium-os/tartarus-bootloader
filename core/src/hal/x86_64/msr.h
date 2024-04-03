@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 
+#define MSR_EFER 0xC0000080
+
 static inline uint64_t msr_read(uint64_t msr) {
     uint32_t low;
     uint32_t high;

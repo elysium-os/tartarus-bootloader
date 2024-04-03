@@ -50,6 +50,7 @@ typedef struct {
 } __TARTARUS_PACKED tartarus_module_t;
 
 typedef struct {
+    uint16_t version;
     struct {
         uint64_t vaddr;
         uint64_t paddr;

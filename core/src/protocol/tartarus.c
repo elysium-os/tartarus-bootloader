@@ -1,5 +1,7 @@
 #include "protocol.h"
 #include <stdint.h>
+#include <lib/str.h>
+#include <lib/math.h>
 #include <common/log.h>
 #include <common/elf.h>
 #include <memory/pmm.h>
@@ -9,12 +11,16 @@
 #include <hal/acpi.h>
 #include <tartarus.h>
 #ifdef __X86_64
+#include <hal/x86_64/msr.h>
 #include <hal/x86_64/lapic.h>
 #include <hal/x86_64/smp.h>
 #endif
 #ifdef __UEFI
 #include <hal/uefi/efi.h>
 #endif
+
+#define MAJOR_VERSION 1
+#define MINOR_VERSION 0
 
 #define HHDM_MIN_SIZE 0x100000000
 #define HHDM_OFFSET 0xFFFF800000000000
@@ -24,6 +30,8 @@
 extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot_info);
 
 [[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel_node, fb_t fb) {
+    log("PROTO_TARTARUS", "Version %u.%u", MAJOR_VERSION, MINOR_VERSION);
+
     // Setup HHDM
     void *address_space = hal_vmm_create_address_space();
     hal_vmm_map(address_space, PMM_PAGE_SIZE, PMM_PAGE_SIZE, HHDM_MIN_SIZE - PMM_PAGE_SIZE, HHDM_FLAGS);
@@ -47,12 +55,40 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
         hal_vmm_map(address_space, base, base, length, HHDM_FLAGS);
         hal_vmm_map(address_space, base, HHDM_OFFSET + base, length, HHDM_FLAGS);
     }
-
     hal_vmm_load_address_space(address_space);
 
     // Load kernel
     elf_loaded_image_t *kernel = elf_load(kernel_node, address_space);
     if(kernel == NULL) log_panic("PROTO_TARTARUS", "Failed to load kernel");
+
+    // Load modules
+    int module_count = config_key_count(config, "MODULE");
+    tartarus_module_t *modules = heap_alloc(sizeof(tartarus_module_t) * module_count);
+    for(int i = 0; i < module_count; i++) {
+        char *module_path = config_read_string_ext(config, "MODULE", i);
+        if(module_path == NULL) continue;
+        log("PROTO_TARTARUS", "Loading module %s", module_path);
+
+        vfs_node_t *module_node = vfs_lookup(kernel_node->vfs, module_path);
+        if(module_node == NULL) log_warning("PROTO_TARTARUS", "Module %s not found", module_path);
+
+        vfs_attr_t module_attr;
+        module_node->ops->attr(module_node, &module_attr);
+        void *module_addr = pmm_alloc(PMM_AREA_STANDARD, MATH_DIV_CEIL(module_attr.size, PMM_PAGE_SIZE));
+        size_t count = module_node->ops->read(module_node, module_addr, 0, module_attr.size);
+        if(count != module_attr.size) {
+            pmm_free(module_addr, MATH_DIV_CEIL(module_attr.size, PMM_PAGE_SIZE));
+            log_warning("PROTO_TARTARUS", "Failed to load module %s", module_path);
+            continue;
+        }
+
+        char *module_name = heap_alloc(strlen(module_path) + 1);
+        strcpy(module_name, module_path);
+
+        modules[i].name = HHDM_CAST(char *, module_name);
+        modules[i].paddr = HHDM_CAST(uint64_t, module_addr);
+        modules[i].size = module_attr.size;
+    }
 
     // Find ACPI
     acpi_rsdp_t *rsdp = hal_acpi_find_rsdp();
@@ -94,6 +130,8 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     }
 
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
+    boot_info->version = ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION;
+
     boot_info->kernel.paddr = kernel->paddr;
     boot_info->kernel.vaddr = kernel->vaddr;
     boot_info->kernel.size = kernel->size;
@@ -133,8 +171,8 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     boot_info->bsp_index = bsp_index;
 #endif
 
-    boot_info->module_count = 0;
-    boot_info->modules = HHDM_CAST(tartarus_module_t *, NULL);
+    boot_info->module_count = module_count;
+    boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
 #ifdef __UEFI
     // Exit boot services

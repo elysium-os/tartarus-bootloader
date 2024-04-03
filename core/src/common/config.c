@@ -26,9 +26,10 @@ static token_t tokenize(char *data, size_t data_size, size_t start, char termina
     return (token_t) { .start = start, .length = length, .next = next };
 }
 
-static config_entry_t *find_entry(config_t *config, const char *key) {
+static config_entry_t *find_entry(config_t *config, const char *key, int index) {
+    int count = 0;
     for(unsigned int i = 0; i < config->entry_count; i++) {
-        if(strcmp(config->entries[i].key, key) != 0) continue;
+        if(strcmp(config->entries[i].key, key) != 0 || count++ < index) continue;
         return &config->entries[i];
     }
     return NULL;
@@ -81,20 +82,38 @@ void config_free(config_t *config) {
     heap_free(config);
 }
 
+int config_key_count(config_t *config, const char *key) {
+    int i;
+    for(i = 0; find_entry(config, key, i) != NULL; i++);
+    return i;
+}
+
 char *config_read_string(config_t *config, const char *key) {
-    config_entry_t *entry = find_entry(config, key);
+    return config_read_string_ext(config, key, 0);
+}
+
+char *config_read_string_ext(config_t *config, const char *key, int index) {
+    config_entry_t *entry = find_entry(config, key, index);
     if(entry == NULL) return NULL;
     return entry->value;
 }
 
 bool config_read_bool(config_t *config, const char *key, bool default_value) {
-    config_entry_t *entry = find_entry(config, key);
+    return config_read_bool_ext(config, key, default_value, 0);
+}
+
+bool config_read_bool_ext(config_t *config, const char *key, bool default_value, int index) {
+    config_entry_t *entry = find_entry(config, key, index);
     if(entry == NULL) return default_value;
     return strcmp(entry->value, "true") == 0 || strcmp(entry->value, "TRUE") == 0;
 }
 
 int config_read_int(config_t *config, const char *key, int default_value) {
-    config_entry_t *entry = find_entry(config, key);
+    return config_read_int_ext(config, key, default_value, 0);
+}
+
+int config_read_int_ext(config_t *config, const char *key, int default_value, int index) {
+    config_entry_t *entry = find_entry(config, key, index);
     if(entry == NULL) return default_value;
 
     int value = 0;

@@ -8,7 +8,6 @@
 #include <hal/x86_64/msr.h>
 
 #define CPUID_NX (1 << 20)
-#define MSR_EFER 0xC0000080
 #define MSR_EFER_NX (1 << 11)
 
 EFI_SYSTEM_TABLE *g_system_table;

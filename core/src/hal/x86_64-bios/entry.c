@@ -10,7 +10,6 @@
 #define E820_MAX 512
 #define E820_MAGIC_NUMBER 0x534D4150
 #define CPUID_NX (1 << 20)
-#define MSR_EFER 0xC0000080
 #define MSR_EFER_NX (1 << 11)
 
 typedef struct {
