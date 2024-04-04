@@ -86,7 +86,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
         strcpy(module_name, module_path);
 
         modules[i].name = HHDM_CAST(char *, module_name);
-        modules[i].paddr = HHDM_CAST(uint64_t, module_addr);
+        modules[i].paddr = (uint64_t) (uintptr_t) module_addr;
         modules[i].size = module_attr.size;
     }
 
@@ -115,23 +115,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     config_free(config);
 
     // Setup boot info
-    tartarus_memory_map_entry_t *memory_map_entries = heap_alloc(sizeof(tartarus_memory_map_entry_t) * g_pmm_map_size);
-    for(uint16_t i = 0; i < g_pmm_map_size; i++) {
-        memory_map_entries[i].base = g_pmm_map[i].base;
-        memory_map_entries[i].length = g_pmm_map[i].length;
-        tartarus_memory_map_type_t type;
-        switch(g_pmm_map[i].type) {
-            case PMM_MAP_TYPE_FREE: type = TARTARUS_MEMORY_MAP_TYPE_USABLE; break;
-            case PMM_MAP_TYPE_ALLOCATED: type = TARTARUS_MEMORY_MAP_TYPE_BOOT_RECLAIMABLE; break;
-            case PMM_MAP_TYPE_ACPI_RECLAIMABLE: type = TARTARUS_MEMORY_MAP_TYPE_ACPI_RECLAIMABLE; break;
-            case PMM_MAP_TYPE_ACPI_NVS: type = TARTARUS_MEMORY_MAP_TYPE_ACPI_NVS; break;
-            case PMM_MAP_TYPE_BAD: type = TARTARUS_MEMORY_MAP_TYPE_BAD; break;
-            case PMM_MAP_TYPE_RESERVED:
-            default: type = TARTARUS_MEMORY_MAP_TYPE_RESERVED; break;
-        }
-        memory_map_entries[i].type = type;
-    }
-
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
     boot_info->version = ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION;
 
@@ -141,9 +124,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
 
     boot_info->hhdm.offset = HHDM_OFFSET;
     boot_info->hhdm.size = hhdm_size;
-
-    boot_info->memory_map.entries = HHDM_CAST(tartarus_memory_map_entry_t *, memory_map_entries);
-    boot_info->memory_map.size = g_pmm_map_size;
 
     boot_info->framebuffer.address = HHDM_CAST(void *, fb.address);
     boot_info->framebuffer.size = fb.size;
@@ -174,9 +154,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     boot_info->bsp_index = bsp_index;
 #endif
 
-    boot_info->module_count = module_count;
-    boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
-
 #ifdef __UEFI
     // Exit boot services
     UINTN umap_size = 0;
@@ -192,6 +169,28 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     }
     g_system_table->BootServices->ExitBootServices(g_imagehandle, map_key);
 #endif
+
+    tartarus_memory_map_entry_t *memory_map_entries = heap_alloc(sizeof(tartarus_memory_map_entry_t) * g_pmm_map_size);
+    for(uint16_t i = 0; i < g_pmm_map_size; i++) {
+        memory_map_entries[i].base = g_pmm_map[i].base;
+        memory_map_entries[i].length = g_pmm_map[i].length;
+        tartarus_memory_map_type_t type;
+        switch(g_pmm_map[i].type) {
+            case PMM_MAP_TYPE_FREE: type = TARTARUS_MEMORY_MAP_TYPE_USABLE; break;
+            case PMM_MAP_TYPE_ALLOCATED: type = TARTARUS_MEMORY_MAP_TYPE_BOOT_RECLAIMABLE; break;
+            case PMM_MAP_TYPE_ACPI_RECLAIMABLE: type = TARTARUS_MEMORY_MAP_TYPE_ACPI_RECLAIMABLE; break;
+            case PMM_MAP_TYPE_ACPI_NVS: type = TARTARUS_MEMORY_MAP_TYPE_ACPI_NVS; break;
+            case PMM_MAP_TYPE_BAD: type = TARTARUS_MEMORY_MAP_TYPE_BAD; break;
+            case PMM_MAP_TYPE_RESERVED:
+            default: type = TARTARUS_MEMORY_MAP_TYPE_RESERVED; break;
+        }
+        memory_map_entries[i].type = type;
+    }
+    boot_info->memory_map.entries = HHDM_CAST(tartarus_memory_map_entry_t *, memory_map_entries);
+    boot_info->memory_map.size = g_pmm_map_size;
+
+    boot_info->module_count = module_count;
+    boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
     protocol_tartarus_handoff(kernel->entry, stack, HHDM_CAST(uint64_t, boot_info));
     __builtin_unreachable();
