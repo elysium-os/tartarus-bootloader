@@ -94,6 +94,9 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     acpi_rsdp_t *rsdp = hal_acpi_find_rsdp();
     if(rsdp == NULL) log_panic("PROTO_TARTARUS", "Could not locate RSDP");
 
+    // Allocate stack
+    void *stack = pmm_alloc(PMM_AREA_STANDARD, 16) + 16 * PMM_PAGE_SIZE;
+
     // Initialize SMP
 #ifdef __X86_64
     smp_cpu_t *cpus = NULL;
@@ -190,7 +193,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     g_system_table->BootServices->ExitBootServices(g_imagehandle, map_key);
 #endif
 
-    void *stack = pmm_alloc(PMM_AREA_STANDARD, 16) + 16 * PMM_PAGE_SIZE;
     protocol_tartarus_handoff(kernel->entry, stack, HHDM_CAST(uint64_t, boot_info));
     __builtin_unreachable();
 }
