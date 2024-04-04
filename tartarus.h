@@ -75,6 +75,7 @@ typedef struct {
     __TARTARUS_PTR(tartarus_cpu_t *) cpus;
     uint16_t module_count;
     __TARTARUS_PTR(tartarus_module_t *) modules;
+    uint64_t boot_timestamp;
 } __TARTARUS_PACKED tartarus_boot_info_t;
 
 #endif

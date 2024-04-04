@@ -9,6 +9,7 @@
 #include <drivers/acpi.h>
 #include <hal/vmm.h>
 #include <hal/acpi.h>
+#include <hal/time.h>
 #include <tartarus.h>
 #ifdef __X86_64
 #include <hal/x86_64/msr.h>
@@ -20,7 +21,7 @@
 #endif
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 0
+#define MINOR_VERSION 1
 
 #define HHDM_MIN_SIZE 0x100000000
 #define HHDM_OFFSET 0xFFFF800000000000
@@ -153,6 +154,8 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, cpu_array);
     boot_info->bsp_index = bsp_index;
 #endif
+
+    boot_info->boot_timestamp = hal_time();
 
 #ifdef __UEFI
     // Exit boot services
