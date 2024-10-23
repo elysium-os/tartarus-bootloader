@@ -35,6 +35,7 @@ typedef struct {
 } __TARTARUS_PACKED tartarus_memory_map_entry_t;
 
 typedef struct {
+bool init_failed;
 __TARTARUS_PTR(uint64_t *) wake_on_write;
 #ifdef __X86_64
 uint8_t lapic_id;

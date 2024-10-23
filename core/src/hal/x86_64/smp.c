@@ -92,6 +92,7 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
                 cpu->next = cpus;
                 cpus = cpu;
 
+                cpu->init_failed = false;
                 cpu->acpi_id = lapic_record->acpi_processor_id;
                 cpu->lapic_id = lapic_record->lapic_id;
                 cpu->wake_on_write = NULL;
@@ -119,6 +120,7 @@ smp_cpu_t *smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_ini
                     if(value > 0) goto success;
                 }
                 log_warning("SMP", "lapic[%u] failed to initialize", lapic_record->lapic_id);
+                cpu->init_failed = true;
                 break;
                 success:
                 log("SMP", "lapic[%u] initialized", lapic_record->lapic_id);

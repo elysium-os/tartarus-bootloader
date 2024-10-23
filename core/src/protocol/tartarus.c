@@ -149,6 +149,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
             cpu_array[i].wake_on_write = HHDM_CAST(uint64_t *, cpu->wake_on_write);
         }
         cpu_array[i].lapic_id = cpu->lapic_id;
+        cpu_array[i].init_failed = cpu->init_failed;
     }
     boot_info->cpu_count = cpu_count;
     boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, cpu_array);

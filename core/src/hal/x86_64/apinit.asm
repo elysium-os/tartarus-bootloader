@@ -3,7 +3,8 @@ global g_apinit_end
 
 section .rodata
 
-%define off(addr) ebx + addr - g_apinit_start
+%define off(addr) ebx + (addr - g_apinit_start)
+%define off_cs(addr) cs:(addr - g_apinit_start)
 
 g_apinit_start:
 bits 16
@@ -13,16 +14,16 @@ bits 16
     mov ebx, cs
     shl ebx, 4                                              ; Calculate the offset of the loaded code (cs * 0x10)
 
-    o32 lgdt [off(boot_info.gdtr)]                          ; Load GDT
+    o32 lgdt [off_cs(boot_info.gdtr)]                       ; Load GDT
 
     lea eax, [off(.protected)]
-    mov dword [off(.far_jmp32)], eax                        ; Set far jump offset
+    mov dword [off_cs(.far_jmp32)], eax                     ; Set far jump offset
 
     mov eax, cr0
     or eax, 1                                               ; Set protected mode bit
     mov cr0, eax
 
-    o32 jmp far [off(.far_jmp32)]                           ; Far jump to protected mode
+    o32 jmp far [off_cs(.far_jmp32)]                        ; Far jump to protected mode
 .far_jmp32:
     dd 0
     dw 0x18                                                 ; Code32 selector
