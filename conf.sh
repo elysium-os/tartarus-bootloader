@@ -5,9 +5,6 @@ ENV="dev"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --libgcc-dir=*)
-            LIBGCC_DIR=${1#*=}
-            ;;
         --prefix=*)
             PREFIX=${1#*=}
             ;;
@@ -39,11 +36,6 @@ while [[ $# -gt 0 ]]; do
 done
 set -- "${POSITIONAL_ARGS[@]}"
 
-if [ -z "$LIBGCC_DIR" ]; then
-    >&2 echo "Missing libgcc-dir path"
-    exit 1
-fi
-
 if [ -z "$TARGET" ]; then
     >&2 echo "No target provided"
     exit 1
@@ -62,7 +54,6 @@ echo "export PREFIX := $PREFIX" >> $CONFMK
 
 echo "export SRC := $SRCDIR" >> $CONFMK
 echo "export BUILD := $DSTDIR/build" >> $CONFMK
-echo "export LIBGCC_DIR := $LIBGCC_DIR" >> $CONFMK
 
 echo "export GIT := git" >> $CONFMK
 echo "export ASMC := nasm" >> $CONFMK
