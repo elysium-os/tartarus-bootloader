@@ -21,7 +21,7 @@
 #endif
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 1
+#define MINOR_VERSION 2
 
 #define HHDM_MIN_SIZE 0x100000000
 #define HHDM_OFFSET 0xFFFF800000000000
@@ -132,7 +132,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     boot_info->framebuffer.height = fb.height;
     boot_info->framebuffer.pitch = fb.pitch;
 
-    boot_info->acpi_rsdp = HHDM_CAST(void *, rsdp);
+    boot_info->acpi_rsdp_address = (uint64_t) (uintptr_t) rsdp;
 
 #ifdef __X86_64
     uint8_t cpu_count = 0;

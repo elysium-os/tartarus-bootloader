@@ -70,7 +70,7 @@ typedef struct {
         uint64_t size;
         uint32_t width, height, pitch;
     } __TARTARUS_PACKED framebuffer;
-    __TARTARUS_PTR(void *) acpi_rsdp;
+    uint64_t acpi_rsdp_address;
     uint8_t bsp_index;
     uint8_t cpu_count;
     __TARTARUS_PTR(tartarus_cpu_t *) cpus;
