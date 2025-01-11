@@ -58,6 +58,7 @@ endif
 ifeq ($(TARGET), x86_64-bios)
 $(BUILD)/core/tartarus.sys: $(BUILD)/core/tartarus.elf
 	$(OBJCOPY) -O binary $< $@
+	chmod -x $@
 
 $(BUILD)/core/tartarus.elf: $(C_OBJ) $(ASM_OBJ) $(LIBGCC_BINARIES)/libgcc-i686.a
 	$(LD) $(LDFLAGS) -T"link.x86_64.bios.ld" -o $@ $^
@@ -66,12 +67,14 @@ endif
 ifeq ($(TARGET), x86_64-uefi64)
 $(BUILD)/core/tartarus.efi: $(BUILD)/core/tartarus.elf
 	$(OBJCOPY) -O binary $< $@
+	chmod -x $@
+	dd if=/dev/zero of='$@' bs=4096 count=0 seek=$$(( ($$(wc -c < '$@') + 4095) / 4096 ))
 
 $(BUILD)/core/tartarus.elf: $(EFIDIR)/src/crt0-efi-x86_64.S.o $(EFIDIR)/src/reloc_x86_64.c.o $(C_OBJ) $(ASM_OBJ) $(LIBGCC_BINARIES)/libgcc-x86_64-no-red-zone.a
 	$(LD) $(LDFLAGS) -T"$(EFIDIR)/src/elf_x86_64_efi.lds" -o $@ $^
 
 $(EFIDIR)/src/crt0-efi-x86_64.S.o $(EFIDIR)/src/reloc_x86_64.c.o: $(EFIDIR)
-	$(MAKE) ARCH=x86_64 CC=$(CC) -C $(EFIDIR)/src -f nyu-efi.mk
+	$(MAKE) ARCH=x86_64 CC="$(CC)" CFLAGS="$(CFLAGS)" -C $(EFIDIR)/src -f nyu-efi.mk
 endif
 
 # Wildcard Targets
