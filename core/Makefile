@@ -71,7 +71,7 @@ $(BUILD)/core/tartarus.elf: $(EFIDIR)/src/crt0-efi-x86_64.S.o $(EFIDIR)/src/relo
 	$(LD) $(LDFLAGS) -T"$(EFIDIR)/src/elf_x86_64_efi.lds" -o $@ $^
 
 $(EFIDIR)/src/crt0-efi-x86_64.S.o $(EFIDIR)/src/reloc_x86_64.c.o: $(EFIDIR)
-	$(MAKE) ARCH=x86_64 -C $(EFIDIR)/src -f nyu-efi.mk
+	$(MAKE) ARCH=x86_64 CC=$(CC) -C $(EFIDIR)/src -f nyu-efi.mk
 endif
 
 # Wildcard Targets
