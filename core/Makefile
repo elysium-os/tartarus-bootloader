@@ -1,5 +1,5 @@
 # Expects TARGET, GIT, CC, LD, OBJCOPY, ASMC, BUILD
-EFIDIR := $(BUILD)/limine-efi
+EFIDIR := $(BUILD)/nyu-efi
 LIBGCC_BINARIES := $(BUILD)/libgcc-binaries
 
 ifneq (, $(filter $(TARGET), x86_64-bios x86_64-uefi64))
@@ -67,11 +67,11 @@ ifeq ($(TARGET), x86_64-uefi64)
 $(BUILD)/core/tartarus.efi: $(BUILD)/core/tartarus.elf
 	$(OBJCOPY) -O binary $< $@
 
-$(BUILD)/core/tartarus.elf: $(EFIDIR)/gnuefi/crt0-efi-x86_64.S.o $(EFIDIR)/gnuefi/reloc_x86_64.c.o $(C_OBJ) $(ASM_OBJ) $(LIBGCC_BINARIES)/libgcc-x86_64-no-red-zone.a
-	$(LD) $(LDFLAGS) -T"$(EFIDIR)/gnuefi/elf_x86_64_efi.lds" -o $@ $^
+$(BUILD)/core/tartarus.elf: $(EFIDIR)/src/crt0-efi-x86_64.S.o $(EFIDIR)/src/reloc_x86_64.c.o $(C_OBJ) $(ASM_OBJ) $(LIBGCC_BINARIES)/libgcc-x86_64-no-red-zone.a
+	$(LD) $(LDFLAGS) -T"$(EFIDIR)/src/elf_x86_64_efi.lds" -o $@ $^
 
-$(EFIDIR)/gnuefi/crt0-efi-x86_64.S.o $(EFIDIR)/gnuefi/reloc_x86_64.c.o: $(EFIDIR)
-	$(MAKE) ARCH=x86_64 -C $(EFIDIR)/gnuefi
+$(EFIDIR)/src/crt0-efi-x86_64.S.o $(EFIDIR)/src/reloc_x86_64.c.o: $(EFIDIR)
+	$(MAKE) ARCH=x86_64 -C $(EFIDIR)/src
 endif
 
 # Wildcard Targets
@@ -85,7 +85,7 @@ $(BUILD)/core/%.o: %.c
 
 # Requirement Targets
 $(EFIDIR):
-	$(GIT) clone https://github.com/limine-bootloader/limine-efi.git $@ --depth=1
+	$(GIT) clone https://github.com/osdev0/nyu-efi.git $@ --depth=1
 
 $(LIBGCC_BINARIES)/libgcc-%.a:
 	$(GIT) clone https://github.com/osdev0/libgcc-binaries.git $(@D) --depth=1
