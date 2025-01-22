@@ -20,5 +20,13 @@ install:
 endif
 
 ifeq ($(PLATFORM), x86_64-uefi)
+all: $(BUILD_DIRECTORY)/core/tartarus.efi
 
+$(BUILD_DIRECTORY)/core/tartarus.efi:
+	$(MAKE) -C $(SRC_DIRECTORY)/core $@
+
+install:
+	install -d $(DESTDIR)$(PREFIX)/include $(DESTDIR)$(PREFIX)/share/tartarus
+	install $(SRC_DIRECTORY)/tartarus.h $(DESTDIR)$(PREFIX)/include
+	install $(BUILD_DIRECTORY)/core/tartarus.efi $(DESTDIR)$(PREFIX)/share/tartarus
 endif

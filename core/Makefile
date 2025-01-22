@@ -53,7 +53,8 @@ endif
 
 ifeq ($(PLATFORM), x86_64-uefi)
     C_FLAGS += -m64 -march=x86-64 -mno-red-zone -fPIE -funsigned-char -fshort-wchar
-    C_FLAGS += -D GNU_EFI_USE_MS_ABI -I$(EFIDIR)/inc -I$(EFIDIR)/inc/x86_64
+    C_FLAGS += -I$(VENDOR_EFI)/inc -I$(VENDOR_EFI)/inc/x86_64
+    C_FLAGS += -D GNU_EFI_USE_MS_ABI
     LD_FLAGS += -m elf_x86_64 -pie -z text
     ASM_FLAGS := -f elf64
 endif
@@ -81,7 +82,7 @@ $(BUILD_DIRECTORY)/core/tartarus.elf: $(OBJS) $(VENDOR_LIBGCC)/libgcc-i686.a
 	$(LD) $(LD_FLAGS) -T"$(SRC_DIRECTORY)/core/support/link.x86_64.bios.ld" -o $@ $^
 endif
 
-ifeq ($(TARGET), x86_64-uefi)
+ifeq ($(PLATFORM), x86_64-uefi)
 $(BUILD_DIRECTORY)/core/tartarus.efi: $(BUILD_DIRECTORY)/core/tartarus.elf
 	mkdir -p $(@D)
 	$(OBJCOPY) -O binary $< $@
