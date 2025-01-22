@@ -1,0 +1,47 @@
+{
+    "configurations": [
+        {
+            "name": "Tartarus x86_64-bios",
+            "includePath": [
+                "${workspaceFolder}/core/src"
+            ],
+            "defines": [
+                "__ARCH_X86_64",
+                "__PLATFORM_X86_64_BIOS",
+                "__ENV_DEVELOPMENT",
+
+                /* Unsupported C23 features work-around */
+                /* https://github.com/microsoft/vscode-cpptools/issues/10696 */
+                "true=1",
+                "false=0",
+                "bool=_Bool",
+                "static_assert=_Static_assert"
+            ],
+            "compilerPath": "/run/current-system/sw/bin/gcc",
+            "cStandard": "gnu23",
+            "intelliSenseMode": "gcc-x86",
+            "compilerArgs": [
+                "-std=gnu2x",
+                "-ffreestanding",
+                "-mabi=sysv",
+                "-mgeneral-regs-only",
+
+                "-m32",
+                "-march=i686",
+                "-fno-PIC",
+
+                "-Wall",
+                "-Wextra",
+                "-Wvla",
+                "-Wshadow",
+
+                "-fno-stack-protector",
+                "-fno-stack-check",
+                "-fno-omit-frame-pointer",
+                "-fno-strict-aliasing",
+                "-fno-lto"
+            ]
+        }
+    ],
+    "version": 4
+}
