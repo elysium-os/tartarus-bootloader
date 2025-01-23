@@ -40,3 +40,6 @@ extern size_t g_pmm_map_size;
 extern pmm_map_entry_t g_pmm_map[PMM_MAP_MAX_ENTRIES];
 
 void pmm_map_add(uint64_t base, uint64_t length, pmm_map_type_t type);
+
+void *pmm_alloc(pmm_map_area_t area, size_t count);
+void pmm_free(void *address, size_t count);
