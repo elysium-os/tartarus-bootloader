@@ -35,7 +35,6 @@ static void qemu_debug_log(char c) {
 #endif
 
     cpu_enable_nx();
-    for(;;);
 
     // Load E820
     e820_entry_t e820[E820_MAX];

@@ -19,7 +19,6 @@ static void qemu_debug_log(char c) {
 #endif
 
     cpu_enable_nx();
-    for(;;);
 
     // Initialize physical memory
     UINTN map_size = 0;
