@@ -1,6 +1,5 @@
 #include "log.h"
 
-#include "cpu/cpu.h"
 #include "lib/format.h"
 
 #include <stddef.h>

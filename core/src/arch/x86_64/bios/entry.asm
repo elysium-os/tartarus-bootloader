@@ -1,6 +1,6 @@
-extern entry
-extern g_gdt
-extern g_gdt_limit
+extern x86_64_bios_entry
+extern g_x86_64_gdt
+extern g_x86_64_gdt_limit
 extern a20_enable
 
 bits 16
@@ -47,8 +47,8 @@ entry_real:
     jnc error.couldnt_enable_a20
 
     cli
-    push dword g_gdt
-    push word [g_gdt_limit]
+    push dword g_x86_64_gdt
+    push word [g_x86_64_gdt_limit]
     lgdt [esp]
     add esp, 6
 
@@ -70,7 +70,7 @@ entry_protected:
 
     mov bp, sp
 
-    jmp entry
+    jmp x86_64_bios_entry
 
 bits 16
 error:

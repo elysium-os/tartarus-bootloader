@@ -1,8 +1,9 @@
 #include "common/log.h"
 #include "core.h"
-#include "cpu/cpu.x86_64.h"
-#include "cpu/int.x86_64.bios.h"
 #include "memory/pmm.h"
+
+#include "arch/x86_64/bios/int.h"
+#include "arch/x86_64/cpu.h"
 
 #define E820_MAX 512
 #define E820_MAGIC_NUMBER 0x534D4150
@@ -28,13 +29,13 @@ static void qemu_debug_log(char c) {
 }
 #endif
 
-[[noreturn]] void entry() {
+[[noreturn]] void x86_64_bios_entry() {
 #ifdef __ENV_DEVELOPMENT
     qemu_debug_log('\n');
     log_sink_set(qemu_debug_log);
 #endif
 
-    cpu_enable_nx();
+    x86_64_cpu_enable_nx();
 
     // Load E820
     e820_entry_t e820[E820_MAX];

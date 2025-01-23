@@ -1,19 +1,19 @@
 # Sources
-C_SOURCES := $(shell find src -type f -regex "src\/[^.]*?.c")
+C_SOURCES := $(shell find src -type f -name "*.c" -not -path "src/arch/*")
 
 ifneq (, $(filter $(PLATFORM), x86_64-bios x86_64-uefi))
-    C_SOURCES += $(shell find src -type f -name "*.x86_64.c")
-    ASM_SOURCES := $(shell find src -type f -regex "*.x86_64.asm")
+    C_SOURCES += $(shell find src/arch/x86_64 -type f -name "*.c" -not -path "src/arch/x86_64/*/*")
+    ASM_SOURCES += $(shell find src/arch/x86_64 -type f -name "*.asm" -not -path "src/arch/x86_64/*/*")
 endif
 
 ifeq ($(PLATFORM), x86_64-bios)
-    C_SOURCES += $(shell find src -type f -name "*.x86_64.bios.c")
-    ASM_SOURCES += $(shell find src -type f -name "*.x86_64.bios.asm")
+    C_SOURCES += $(shell find src/arch/x86_64/bios -type f -name "*.c")
+    ASM_SOURCES += $(shell find src/arch/x86_64/bios -type f -name "*.asm")
 endif
 
 ifeq ($(PLATFORM), x86_64-uefi)
-    C_SOURCES += $(shell find src -type f -name "*.x86_64.uefi.c")
-    ASM_SOURCES += $(shell find src -type f -name "*.x86_64.uefi.asm")
+    C_SOURCES += $(shell find src/arch/x86_64/uefi -type f -name "*.c")
+    ASM_SOURCES += $(shell find src/arch/x86_64/uefi -type f -name "*.asm")
 endif
 
 # Objects
@@ -27,7 +27,7 @@ endif
 C_FLAGS := -std=gnu2x -ffreestanding
 C_FLAGS += -fno-stack-protector -fno-stack-check -fno-omit-frame-pointer -fno-strict-aliasing -fno-lto
 C_FLAGS += -Wall -Wextra -Wvla -Wshadow
-C_FLAGS += -I$(SRC_DIRECTORY)/core/src
+C_FLAGS += -Isrc
 C_FLAGS += -D__ENV_$(shell echo $(ENVIRONMENT) | tr a-z A-Z) -D__PLATFORM_$(shell echo $(PLATFORM) | tr a-z A-Z | tr - _)
 LD_FLAGS := -nostdlib -z noexecstack
 

@@ -1,10 +1,10 @@
 #include "common/log.h"
 #include "common/panic.h"
 #include "core.h"
-#include "cpu/cpu.x86_64.h"
 #include "memory/pmm.h"
 
-#include <efi.h>
+#include "arch/x86_64/cpu.h"
+#include "arch/x86_64/uefi/efi.h"
 
 #ifdef __ENV_DEVELOPMENT
 static void qemu_debug_log(char c) {
@@ -12,13 +12,19 @@ static void qemu_debug_log(char c) {
 }
 #endif
 
+EFI_SYSTEM_TABLE *g_x86_64_uefi_efi_system_table;
+EFI_HANDLE g_x86_64_uefi_efi_image_handle;
+
 [[noreturn]] EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table) {
+    g_x86_64_uefi_efi_system_table = system_table;
+    g_x86_64_uefi_efi_image_handle = image_handle;
+
 #ifdef __ENV_DEVELOPMENT
     qemu_debug_log('\n');
     log_sink_set(qemu_debug_log);
 #endif
 
-    cpu_enable_nx();
+    x86_64_cpu_enable_nx();
 
     // Initialize physical memory
     UINTN map_size = 0;
