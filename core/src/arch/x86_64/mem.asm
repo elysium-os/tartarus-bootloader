@@ -2,7 +2,7 @@ global memcpy
 global memset
 global memmove
 
-%ifdef __UEFI64
+%ifdef __PLATFORM_X86_64_UEFI
 memcpy:
     mov rcx, rdx
     mov rax, rdi

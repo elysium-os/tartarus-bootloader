@@ -28,8 +28,8 @@ C_FLAGS := -std=gnu2x -ffreestanding
 C_FLAGS += -fno-stack-protector -fno-stack-check -fno-omit-frame-pointer -fno-strict-aliasing -fno-lto
 C_FLAGS += -Wall -Wextra -Wvla -Wshadow
 C_FLAGS += -Isrc
-C_FLAGS += -D__ENV_$(shell echo $(ENVIRONMENT) | tr a-z A-Z) -D__PLATFORM_$(shell echo $(PLATFORM) | tr a-z A-Z | tr - _)
 LD_FLAGS := -nostdlib -z noexecstack
+DEFINES := -D__ENV_$(shell echo $(ENVIRONMENT) | tr a-z A-Z) -D__PLATFORM_$(shell echo $(PLATFORM) | tr a-z A-Z | tr - _)
 
 ifeq ($(ENVIRONMENT), production)
     C_FLAGS += -O3
@@ -40,9 +40,9 @@ ifeq ($(ENVIRONMENT), development)
 endif
 
 ifneq (, $(filter $(PLATFORM), x86_64-bios x86_64-uefi))
-    C_FLAGS += -D__ARCH_X86_64
     C_FLAGS += -mabi=sysv -mgeneral-regs-only
     LD_FLAGS += -z common-page-size=0x1000 -z max-page-size=0x1000
+    DEFINES += -D__ARCH_X86_64
 endif
 
 ifeq ($(PLATFORM), x86_64-bios)
@@ -62,12 +62,12 @@ endif
 # Wildcard Targets
 $(BUILD_DIRECTORY)/core/%.o: %.c
 	mkdir -p $(@D)
-	$(CC) $(C_FLAGS) -o $@ -c $<
+	$(CC) $(DEFINES) $(C_FLAGS) -o $@ -c $<
 
 ifneq (, $(filter $(PLATFORM), x86_64-bios x86_64-uefi))
 $(BUILD_DIRECTORY)/core/%_asm.o: %.asm
 	mkdir -p $(@D)
-	$(NASM) $(ASM_FLAGS) -o $@ $<
+	$(NASM) $(DEFINES) $(ASM_FLAGS) -o $@ $<
 endif
 
 # Final Targets
