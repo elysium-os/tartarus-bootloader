@@ -9,10 +9,21 @@
 #define PAGES_RESERVED_FOR_UEFI 64
 
 #ifdef __ENV_DEVELOPMENT
-static void qemu_debug_log(char c) {
-    asm volatile("outb %0, %1" : : "a"(c), "Nd"(0x3F8));
+static void qemu_debug_log(char ch) {
+    asm volatile("outb %0, %1" : : "a"(ch), "Nd"(0xE9));
 }
+
+static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qemu_debug_log};
 #endif
+
+static void uefi_char_out(char ch) {
+    if(ch == '\n') uefi_char_out('\r');
+
+    CHAR16 str[2] = {ch, 0};
+    g_x86_64_uefi_efi_system_table->ConOut->OutputString(g_x86_64_uefi_efi_system_table->ConOut, str);
+}
+
+static log_sink_t g_uefi_sink = {.level = LOG_LEVEL_DEBUG, .char_out = uefi_char_out};
 
 EFI_SYSTEM_TABLE *g_x86_64_uefi_efi_system_table;
 EFI_HANDLE g_x86_64_uefi_efi_image_handle;
@@ -23,8 +34,9 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
 
 #ifdef __ENV_DEVELOPMENT
     qemu_debug_log('\n');
-    log_sink_set(qemu_debug_log);
+    log_sink_add(&g_qemu_debug_sink);
 #endif
+    log_sink_add(&g_uefi_sink);
 
     x86_64_cpu_enable_nx();
 

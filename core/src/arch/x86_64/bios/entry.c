@@ -24,15 +24,17 @@ typedef enum {
 } e820_type_t;
 
 #ifdef __ENV_DEVELOPMENT
-static void qemu_debug_log(char c) {
-    asm volatile("outb %0, %1" : : "a"(c), "Nd"(0x3F8));
+static void qemu_debug_log(char ch) {
+    asm volatile("outb %0, %1" : : "a"(ch), "Nd"(0xE9));
 }
+
+static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qemu_debug_log};
 #endif
 
 [[noreturn]] void x86_64_bios_entry() {
 #ifdef __ENV_DEVELOPMENT
     qemu_debug_log('\n');
-    log_sink_set(qemu_debug_log);
+    log_sink_add(&g_qemu_debug_sink);
 #endif
 
     x86_64_cpu_enable_nx();
