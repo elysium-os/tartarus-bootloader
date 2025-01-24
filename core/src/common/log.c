@@ -10,7 +10,7 @@ static log_sink_t *g_sinks = NULL;
 static void internal_fmt_list(log_level_t level, const char *fmt, va_list list) {
     va_list local_list;
     for(log_sink_t *sink = g_sinks; sink != NULL; sink = sink->next) {
-        if(sink->level > level) continue;
+        if(level > sink->level) continue;
         va_copy(local_list, list);
         format(sink->char_out, fmt, local_list);
         va_end(local_list);
