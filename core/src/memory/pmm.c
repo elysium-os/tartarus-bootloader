@@ -7,7 +7,7 @@ size_t g_pmm_map_size;
 pmm_map_entry_t g_pmm_map[PMM_MAP_MAX_ENTRIES];
 
 static void map_insert(int index, pmm_map_entry_t entry) {
-    if(g_pmm_map_size == PMM_MAP_MAX_ENTRIES) panic("PMM", "Memory map overflow");
+    if(g_pmm_map_size == PMM_MAP_MAX_ENTRIES) panic("memory map overflow");
     for(int i = g_pmm_map_size; i > index; i--) g_pmm_map[i] = g_pmm_map[i - 1];
     g_pmm_map[index] = entry;
     g_pmm_map_size++;
