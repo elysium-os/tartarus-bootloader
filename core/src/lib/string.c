@@ -17,6 +17,13 @@ bool string_eq(const char *lhs, const char *rhs) {
     return string_cmp(lhs, rhs) == 0;
 }
 
+bool string_case_eq(const char *lhs, const char *rhs) {
+    size_t i = 0;
+    while(((lhs[i] >= 'A' && lhs[i] <= 'Z') ? (lhs[i] + ('a' - 'A')) : lhs[i]) == ((rhs[i] >= 'A' && rhs[i] <= 'Z') ? (rhs[i] + ('a' - 'A')) : rhs[i]))
+        if(lhs[i++] == '\0') return true;
+    return false;
+}
+
 char *string_copy(char *dest, const char *src) {
     size_t i;
     for(i = 0; src[i] != '\0'; i++) dest[i] = src[i];
