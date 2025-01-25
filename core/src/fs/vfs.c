@@ -3,7 +3,7 @@
 #include "lib/mem.h"
 #include "memory/heap.h"
 
-vfs_node_t *vfs_lookup(vfs_t *vfs, char *path) {
+vfs_node_t *vfs_lookup(vfs_t *vfs, const char *path) {
     int comp_start = 0, comp_end = 0;
 
     vfs_node_t *current_node = vfs->root;

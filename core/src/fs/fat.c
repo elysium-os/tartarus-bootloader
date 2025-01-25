@@ -376,6 +376,7 @@ valid_cluster_size:
     heap_free(bpb);
 
     vfs_t *vfs = heap_alloc(sizeof(vfs_t));
+    vfs->partition = partition;
     vfs->data = (void *) fs_data;
     vfs->root = create_node(vfs, NODE_TYPE_ROOT, root_cluster, 0);
     return vfs;
