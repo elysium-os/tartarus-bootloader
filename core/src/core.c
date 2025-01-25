@@ -46,8 +46,9 @@
     log(LOG_LEVEL_INFO, "Config loaded (%u:%u)", config_node->vfs->partition->disk->id, config_node->vfs->partition->id);
 
     // Find kernel
-    const char *kernel_path;
-    if(!config_find_string(config, "kernel", &kernel_path)) panic("no kernel path provided in config");
+    const char *kernel_path = config_find_string(config, "kernel", NULL);
+    if(kernel_path == NULL) panic("no kernel path provided in config");
+
     vfs_node_t *kernel_node = vfs_lookup(config_node->vfs, kernel_path);
     if(kernel_node == NULL) panic("kernel not present at \"%s\"", kernel_path);
 
