@@ -45,7 +45,7 @@
 #define DIR_PARSE_FOUND_NEXT 2
 #define DIR_PARSE_LAST 3
 
-typedef struct {
+typedef struct [[gnu::packed]] {
     uint8_t jmp_boot[3];
     uint8_t oem_name[8];
     uint16_t bytes_per_sector;
@@ -85,9 +85,9 @@ typedef struct {
             uint8_t file_system_type[8];
         } ext32;
     };
-} __attribute((packed)) bpb_t;
+} bpb_t;
 
-typedef struct {
+typedef struct [[gnu::packed]] {
     uint8_t name[11];
     uint8_t attributes;
     uint8_t rsv0;
@@ -100,9 +100,9 @@ typedef struct {
     uint16_t write_date;
     uint16_t cluster_low;
     uint32_t file_size;
-} __attribute__((packed)) directory_entry_t;
+} directory_entry_t;
 
-typedef struct {
+typedef struct [[gnu::packed]] {
     uint8_t order;
     uint8_t name1[10];
     uint8_t attributes;
@@ -111,7 +111,7 @@ typedef struct {
     uint8_t name2[12];
     uint16_t cluster_low;
     uint8_t name3[4];
-} __attribute__((packed)) lfn_directory_entry_t;
+} lfn_directory_entry_t;
 
 typedef struct {
     disk_part_t *partition;
