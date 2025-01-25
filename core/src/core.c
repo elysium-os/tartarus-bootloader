@@ -1,4 +1,5 @@
 #include "arch/disk.h"
+#include "arch/fb.h"
 #include "common/config.h"
 #include "common/log.h"
 #include "common/panic.h"
@@ -51,6 +52,22 @@
 
     vfs_node_t *kernel_node = vfs_lookup(config_node->vfs, kernel_path);
     if(kernel_node == NULL) panic("kernel not present at \"%s\"", kernel_path);
+
+    // Acquire framebuffer
+    fb_t *fb = NULL;
+    bool retrieve_fb = config_find_bool(config, "fb", true);
+    if(retrieve_fb) {
+        uintmax_t fbw = config_find_number(config, "fb_width", 1920);
+        uintmax_t fbh = config_find_number(config, "fb_height", 1080);
+        bool strict_rgb = config_find_bool(config, "fb_strict_rgb", false);
+        log(LOG_LEVEL_INFO, "requesting framebuffer for resolution %llux%llu", fbw, fbh);
+
+        if((fb = arch_fb_acquire(fbw, fbh, strict_rgb))) {
+            log(LOG_LEVEL_INFO, "got framebuffer with resolution %ux%u", fb->width, fb->height);
+        } else {
+            log(LOG_LEVEL_WARN, "failed to acquire framebuffer");
+        }
+    }
 
     for(;;);
 }
