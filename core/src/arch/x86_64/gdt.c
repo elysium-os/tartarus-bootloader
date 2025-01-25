@@ -33,7 +33,7 @@ x86_64_gdt_entry_t g_x86_64_gdt[] = {
 };
 // clang-format on
 
-#ifdef __BIOS
+#ifdef __PLATFORM_X86_64_BIOS
 __attribute__((section(".early")))
 #endif
 uint16_t g_x86_64_gdt_limit = sizeof(g_x86_64_gdt) - 1;
