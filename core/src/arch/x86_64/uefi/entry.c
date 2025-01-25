@@ -82,7 +82,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
             size_t reserve = PAGES_RESERVED_FOR_UEFI - reserved_for_uefi;
             if(entry->NumberOfPages < reserve) reserve = entry->NumberOfPages;
             if(reserve > 0) {
-                pmm_map_add(entry->PhysicalStart, reserve * PMM_GRANULARITY, PMM_MAP_EFI_RECLAIMABLE);
+                pmm_map_set(entry->PhysicalStart, reserve * PMM_GRANULARITY, PMM_MAP_EFI_RECLAIMABLE, false);
                 reserved_for_uefi -= reserve;
                 if(reserve == entry->NumberOfPages) continue;
             }
@@ -93,7 +93,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
             EFI_PHYSICAL_ADDRESS address = start_address;
             status = system_table->BootServices->AllocatePages(AllocateAddress, EfiBootServicesData, pages, &address);
             if(!EFI_ERROR(status)) {
-                pmm_map_add(start_address, pages * PMM_GRANULARITY, PMM_MAP_TYPE_FREE);
+                pmm_map_set(start_address, pages * PMM_GRANULARITY, PMM_MAP_TYPE_FREE, false);
                 continue;
             }
 
@@ -101,12 +101,12 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
                 address = j;
                 status = system_table->BootServices->AllocatePages(AllocateAddress, EfiBootServicesData, 1, &address);
                 if(EFI_ERROR(status)) continue;
-                pmm_map_add(j, PMM_GRANULARITY, PMM_MAP_TYPE_FREE);
+                pmm_map_set(j, PMM_GRANULARITY, PMM_MAP_TYPE_FREE, false);
             }
             continue;
         }
 
-        pmm_map_add(entry->PhysicalStart, entry->NumberOfPages * PMM_GRANULARITY, type);
+        pmm_map_set(entry->PhysicalStart, entry->NumberOfPages * PMM_GRANULARITY, type, false);
     }
 
     core();

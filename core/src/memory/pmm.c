@@ -2,6 +2,7 @@
 
 #include "common/log.h"
 #include "common/panic.h"
+#include "lib/math.h"
 
 size_t g_pmm_map_size;
 pmm_map_entry_t g_pmm_map[PMM_MAP_MAX_ENTRIES];
@@ -18,7 +19,22 @@ static void map_delete(size_t index) {
     g_pmm_map_size--;
 }
 
-static void map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force_override) {
+void pmm_map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force_override) {
+    if(type == PMM_MAP_TYPE_FREE || type == PMM_MAP_TYPE_ALLOCATED) {
+        uint64_t aligned_base = MATH_CEIL(base, PMM_GRANULARITY);
+        uint64_t base_diff = aligned_base - base;
+        if(base_diff >= length) return;
+        base = aligned_base;
+        length = MATH_FLOOR(length - base_diff, PMM_GRANULARITY);
+
+        if(base == 0) {
+            if(length < PMM_GRANULARITY) return;
+            base += PMM_GRANULARITY;
+            length -= PMM_GRANULARITY;
+        }
+    }
+    if(length == 0) return;
+
     for(size_t i = 0; i < g_pmm_map_size; i++) {
         pmm_map_entry_t *map_entry = &g_pmm_map[i];
 
@@ -39,7 +55,7 @@ static void map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool fo
 
             map_entry->base = start_base;
             map_entry->length = start_length;
-            map_set(end_base, end_length, map_entry->type, true);
+            pmm_map_set(end_base, end_length, map_entry->type, true);
             continue;
         }
 
@@ -87,8 +103,8 @@ static void map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool fo
             size_t end_base = map_entry->base + map_entry->length;
             size_t end_length = (base + length) - end_base;
 
-            pmm_map_add(start_base, start_length, type);
-            pmm_map_add(end_base, end_length, type);
+            pmm_map_set(start_base, start_length, type, force_override);
+            pmm_map_set(end_base, end_length, type, force_override);
             return;
         }
 
@@ -116,10 +132,6 @@ static void map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool fo
     map_insert(i, (pmm_map_entry_t) {.base = base, .length = length, .type = type});
 }
 
-void pmm_map_add(uint64_t base, uint64_t length, pmm_map_type_t type) {
-    map_set(base, length, type, false);
-}
-
 void *pmm_alloc(pmm_map_area_t area, size_t count) {
     size_t length = count * PMM_GRANULARITY;
     for(size_t i = 0; i < g_pmm_map_size; i++) {
@@ -132,7 +144,7 @@ void *pmm_alloc(pmm_map_area_t area, size_t count) {
         if(ue_base + ue_length > area.end) ue_length -= (ue_base + ue_length) - area.end;
         if(ue_length < length) continue; // claim does not fit inside entry
 
-        map_set(ue_base, length, PMM_MAP_TYPE_ALLOCATED, true);
+        pmm_map_set(ue_base, length, PMM_MAP_TYPE_ALLOCATED, true);
         return (void *) (uintptr_t) ue_base;
     }
     panic("out of memory");
@@ -140,5 +152,5 @@ void *pmm_alloc(pmm_map_area_t area, size_t count) {
 }
 
 void pmm_free(void *address, size_t count) {
-    map_set((uint64_t) (uintptr_t) address, count * PMM_GRANULARITY, PMM_MAP_TYPE_FREE, true);
+    pmm_map_set((uint64_t) (uintptr_t) address, count * PMM_GRANULARITY, PMM_MAP_TYPE_FREE, true);
 }

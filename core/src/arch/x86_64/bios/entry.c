@@ -70,11 +70,11 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
             case E820_TYPE_RESERVED:
             default:                         type = PMM_MAP_TYPE_RESERVED; break;
         }
-        pmm_map_add(e820[i].address, e820[i].length, type);
+        pmm_map_set(e820[i].address, e820[i].length, type, false);
     }
 
     // Claim tartarus and stack
-    pmm_map_set(0x1000, 0x7000, PMM_MAP_TYPE_ALLOCATED, false);
+    pmm_map_set(0x1000, 0x7000, PMM_MAP_TYPE_ALLOCATED, true);
     pmm_map_set((uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start, PMM_MAP_TYPE_ALLOCATED, true);
 
     core();
