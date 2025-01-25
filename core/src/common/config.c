@@ -52,8 +52,8 @@ static token_t read_token(buffer_t *buffer) {
         return token;
     }
 
-    if(IS_ALPHA(buffer->data[buffer->cursor])) {
-        while(buffer->cursor != buffer->size && (IS_ALPHA(buffer->data[buffer->cursor]) || IS_NUMERIC(buffer->data[buffer->cursor]))) buffer->cursor++;
+    if(buffer->data[buffer->cursor] == '_' || IS_ALPHA(buffer->data[buffer->cursor])) {
+        while(buffer->cursor != buffer->size && (buffer->data[buffer->cursor] == '_' || IS_ALPHA(buffer->data[buffer->cursor]) || IS_NUMERIC(buffer->data[buffer->cursor]))) buffer->cursor++;
         token.length = buffer->cursor - token.start;
         token.kind = TOKEN_KIND_IDENTIFIER;
         return token;
@@ -111,6 +111,24 @@ config_t *config_parse(vfs_node_t *config_node) {
             config->entries[config->entry_count - 1].key = key;
 
             switch(token_value.kind) {
+                case TOKEN_KIND_IDENTIFIER: {
+                    bool value;
+
+                    char *strval = heap_alloc(token_value.length + 1);
+                    memcpy(strval, &buffer.data[token_value.start], token_value.length);
+                    strval[token_value.length] = '\0';
+                    if(string_case_eq(strval, "true")) {
+                        value = true;
+                    } else if(string_case_eq(strval, "false")) {
+                        value = false;
+                    } else {
+                        panic("config parse failed: invalid config entry token `%.*s`", token_value.length, &buffer.data[token_value.start]);
+                    }
+                    heap_free(strval);
+
+                    config->entries[config->entry_count - 1].type = CONFIG_ENTRY_TYPE_BOOLEAN;
+                    config->entries[config->entry_count - 1].value.boolean = value;
+                } break;
                 case TOKEN_KIND_STRING: {
                     char *value = heap_alloc(token_value.length + 1);
                     memcpy(value, &buffer.data[token_value.start], token_value.length);
@@ -137,16 +155,20 @@ config_t *config_parse(vfs_node_t *config_node) {
     return config;
 }
 
-bool config_find_string(config_t *config, const char *key, const char **out) {
+const char *config_find_string(config_t *config, const char *key, const char *default_value) {
     config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_STRING, key, 1);
-    if(entry == NULL) return false;
-    *out = entry->value.string;
-    return true;
+    if(entry == NULL) return default_value;
+    return entry->value.string;
 }
 
-bool config_find_number(config_t *config, const char *key, uintmax_t *out) {
+uintmax_t config_find_number(config_t *config, const char *key, uintmax_t default_value) {
     config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_NUMBER, key, 1);
-    if(entry == NULL) return false;
-    *out = entry->value.number;
-    return true;
+    if(entry == NULL) return default_value;
+    return entry->value.number;
+}
+
+bool config_find_bool(config_t *config, const char *key, bool default_value) {
+    config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_BOOLEAN, key, 1);
+    if(entry == NULL) return default_value;
+    return entry->value.boolean;
 }
