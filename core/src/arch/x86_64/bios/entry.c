@@ -23,6 +23,9 @@ typedef enum {
     E820_TYPE_BAD,
 } e820_type_t;
 
+extern nullptr_t ld_tartarus_start[];
+extern nullptr_t ld_tartarus_end[];
+
 #ifdef __ENV_DEVELOPMENT
 static void qemu_debug_log(char ch) {
     asm volatile("outb %0, %1" : : "a"(ch), "Nd"(0xE9));
@@ -69,6 +72,10 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
         }
         pmm_map_add(e820[i].address, e820[i].length, type);
     }
+
+    // Claim tartarus and stack
+    pmm_map_set(0x1000, 0x7000, PMM_MAP_TYPE_ALLOCATED, false);
+    pmm_map_set((uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start, PMM_MAP_TYPE_ALLOCATED, true);
 
     core();
 }
