@@ -383,6 +383,7 @@ static_assert(sizeof(boot_params_t) == PMM_GRANULARITY);
         size_t ramdisk_size = ramdisk_node->ops->get_size(ramdisk_node);
         size_t ramdisk_pages = MATH_DIV_CEIL(ramdisk_size, PMM_GRANULARITY);
         uintptr_t ramdisk_max_addr = boot_params->setup_header.initrd_addr_max - (ramdisk_pages * PMM_GRANULARITY);
+        // FIX: The alignment of `0x10000000` should not be required... Track down rootcause of initrd fail.
         void *ramdisk_address = pmm_alloc_ext((pmm_map_area_t) {.start = PMM_AREA_STANDARD.start, .end = ramdisk_max_addr}, ramdisk_pages, 0x10000000, PMM_MAP_TYPE_ALLOCATED);
         if(ramdisk_node->ops->read(ramdisk_node, ramdisk_address, 0, ramdisk_size) != ramdisk_size) panic("linux_protocol: failed to load ramdisk");
         boot_params->setup_header.ramdisk_image = (uintptr_t) ramdisk_address;
