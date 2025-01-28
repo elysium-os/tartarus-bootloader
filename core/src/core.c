@@ -6,7 +6,9 @@
 #include "dev/disk.h"
 #include "fs/fat.h"
 #include "fs/vfs.h"
+#include "lib/string.h"
 #include "memory/pmm.h"
+#include "protocol/protocol.h"
 
 #include <stddef.h>
 
@@ -60,14 +62,19 @@
         uintmax_t fbw = config_find_number(config, "fb_width", 1920);
         uintmax_t fbh = config_find_number(config, "fb_height", 1080);
         bool strict_rgb = config_find_bool(config, "fb_strict_rgb", false);
-        log(LOG_LEVEL_INFO, "requesting framebuffer for resolution %llux%llu", fbw, fbh);
+        log(LOG_LEVEL_INFO, "Requesting framebuffer for resolution %llux%llu", fbw, fbh);
 
         if((fb = arch_fb_acquire(fbw, fbh, strict_rgb))) {
-            log(LOG_LEVEL_INFO, "got framebuffer with resolution %ux%u", fb->width, fb->height);
+            log(LOG_LEVEL_INFO, "Got framebuffer with resolution %ux%u", fb->width, fb->height);
         } else {
-            log(LOG_LEVEL_WARN, "failed to acquire framebuffer");
+            log(LOG_LEVEL_WARN, "Failed to acquire framebuffer");
         }
     }
 
-    for(;;);
+    const char *protocol = config_find_string(config, "protocol", NULL);
+    if(protocol == NULL) panic("config provides no boot protocol");
+
+    if(string_case_eq(protocol, "linux")) protocol_linux(config, kernel_node, fb);
+
+    panic("invalid boot protocol `%s`", protocol);
 }
