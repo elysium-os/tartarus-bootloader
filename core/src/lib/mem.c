@@ -26,7 +26,3 @@ int memcmp(const void *lhs, const void *rhs, size_t count) {
     }
     return 0;
 }
-
-[[gnu::weak]] void memclear(void *dest, size_t count) {
-    memset(dest, 0, count);
-}
