@@ -33,7 +33,10 @@ typedef struct {
 static config_entry_t *find_entry(config_t *config, config_entry_type_t type, const char *key, size_t index) {
     for(size_t i = 0; i < config->entry_count; i++) {
         if(config->entries[i].type != type || !string_case_eq(config->entries[i].key, key)) continue;
-        if(--index != 0) continue;
+        if(index != 0) {
+            index--;
+            continue;
+        }
         return &config->entries[i];
     }
     return NULL;
@@ -155,20 +158,38 @@ config_t *config_parse(vfs_node_t *config_node) {
     return config;
 }
 
+size_t config_key_count(config_t *config, const char *key, config_entry_type_t type) {
+    size_t count = 0;
+    while(find_entry(config, type, key, count) != NULL) count++;
+    return count;
+}
+
 const char *config_find_string(config_t *config, const char *key, const char *default_value) {
-    config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_STRING, key, 1);
+    return config_find_string_at(config, key, default_value, 0);
+}
+
+const char *config_find_string_at(config_t *config, const char *key, const char *default_value, size_t index) {
+    config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_STRING, key, index);
     if(entry == NULL) return default_value;
     return entry->value.string;
 }
 
 uintmax_t config_find_number(config_t *config, const char *key, uintmax_t default_value) {
-    config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_NUMBER, key, 1);
+    return config_find_number_at(config, key, default_value, 0);
+}
+
+uintmax_t config_find_number_at(config_t *config, const char *key, uintmax_t default_value, size_t index) {
+    config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_NUMBER, key, index);
     if(entry == NULL) return default_value;
     return entry->value.number;
 }
 
 bool config_find_bool(config_t *config, const char *key, bool default_value) {
-    config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_BOOLEAN, key, 1);
+    return config_find_bool_at(config, key, default_value, 0);
+}
+
+bool config_find_bool_at(config_t *config, const char *key, bool default_value, size_t index) {
+    config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_BOOLEAN, key, index);
     if(entry == NULL) return default_value;
     return entry->value.boolean;
 }
