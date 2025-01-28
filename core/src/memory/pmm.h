@@ -40,7 +40,10 @@ typedef struct {
 extern size_t g_pmm_map_size;
 extern pmm_map_entry_t g_pmm_map[PMM_MAP_MAX_ENTRIES];
 
-void pmm_map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force_override);
+void pmm_map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force);
+void pmm_map_add(uint64_t base, uint64_t length, pmm_map_type_t type);
 
+bool pmm_alloc_at(uint64_t address, size_t page_count, pmm_map_type_t type);
+void *pmm_alloc_ext(pmm_map_area_t area, size_t page_count, size_t alignment, pmm_map_type_t type);
 void *pmm_alloc(pmm_map_area_t area, size_t count);
 void pmm_free(void *address, size_t count);
