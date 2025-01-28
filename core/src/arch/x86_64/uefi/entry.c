@@ -38,7 +38,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
 #endif
     log_sink_add(&g_uefi_sink);
 
-    x86_64_cpu_enable_nx();
+    x86_64_cpu_init();
 
     // Initialize physical memory
     UINTN map_size = 0;

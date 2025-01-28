@@ -40,7 +40,7 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
     log_sink_add(&g_qemu_debug_sink);
 #endif
 
-    x86_64_cpu_enable_nx();
+    x86_64_cpu_init();
 
     // Load E820
     e820_entry_t e820[E820_MAX];

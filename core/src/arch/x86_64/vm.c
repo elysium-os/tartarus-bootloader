@@ -69,7 +69,7 @@ void arch_vm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t l
     while(offset < length) {
         pt_size_t pt_size = PT_SIZE_NORMAL;
         if(paddr % PAGE_SIZE(PT_SIZE_LARGE) == 0 && vaddr % PAGE_SIZE(PT_SIZE_LARGE) == 0 && length - offset >= PAGE_SIZE(PT_SIZE_LARGE)) pt_size = PT_SIZE_LARGE;
-        if(paddr % PAGE_SIZE(PT_SIZE_HUGE) == 0 && vaddr % PAGE_SIZE(PT_SIZE_HUGE) == 0 && length - offset >= PAGE_SIZE(PT_SIZE_HUGE)) pt_size = PT_SIZE_HUGE;
+        if(g_x86_64_cpu_pdpe1gb_support && paddr % PAGE_SIZE(PT_SIZE_HUGE) == 0 && vaddr % PAGE_SIZE(PT_SIZE_HUGE) == 0 && length - offset >= PAGE_SIZE(PT_SIZE_HUGE)) pt_size = PT_SIZE_HUGE;
 
         map_page(address_space, paddr, vaddr, pt_size, (flags & VM_FLAG_WRITE) != 0, g_x86_64_cpu_nx_support && (flags & VM_FLAG_EXEC) == 0);
         paddr += PAGE_SIZE(pt_size);
