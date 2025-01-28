@@ -1,5 +1,6 @@
 #include "arch/fb.h"
 
+#include "common/panic.h"
 #include "memory/heap.h"
 
 #include "arch/x86_64/uefi/efi.h"
@@ -36,6 +37,26 @@ fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict
     fb->size = gop->Mode->FrameBufferSize;
     fb->width = gop->Mode->Info->HorizontalResolution;
     fb->height = gop->Mode->Info->VerticalResolution;
-    fb->pitch = gop->Mode->Info->PixelsPerScanLine;
+    fb->pitch = gop->Mode->Info->PixelsPerScanLine * (32 / 8);
+
+    fb->bpp = 32;
+    fb->mask_red_size = 8;
+    fb->mask_green_size = 8;
+    fb->mask_blue_size = 8;
+    switch(gop->Mode->Info->PixelFormat) {
+        case PixelRedGreenBlueReserved8BitPerColor:
+            fb->mask_red_position = 0;
+            fb->mask_green_position = 8;
+            fb->mask_blue_position = 16;
+            break;
+        case PixelBlueGreenRedReserved8BitPerColor:
+            fb->mask_red_position = 16;
+            fb->mask_green_position = 8;
+            fb->mask_blue_position = 0;
+            break;
+        case PixelBltOnly: panic("framebuffer only supports blit");
+        case PixelBitMask:
+        default:           panic("unsupported framebuffer pixel format");
+    }
     return fb;
 }
