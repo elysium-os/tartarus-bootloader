@@ -40,6 +40,7 @@ linux_handoff:
     mov ds, rax
     mov es, rax
     mov ss, rax
+    cld
 
     add rdi, 0x200
     jmp rdi

@@ -38,6 +38,7 @@ linux_handoff:
     xor ebp, ebp
     xor edi, edi
     xor ebx, ebx
+    cld
 
     mov esi, [esp + 8]
     jmp [esp + 4]
