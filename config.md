@@ -35,7 +35,8 @@ Tartarus will search every FAT12/16/32 partition of every disk at the following 
 |`linux`|cmd|string|No|`"auto"`|Commandline which is passed to the linux kernel.|
 |`linux`|initrd|string|Yes||Path of the initial ramdisk to load.|
 |`tartarus`|module|string|No||Path to a file which will be loaded as a module. It is possible to define this key multiple times for different modules.|
-|`tartarus`|smp|boolean|No||Initialize APs (Appliocation Processor)|
+|`tartarus`|find_rsdp|string|No|`true`|Whether to retrieve the RSDP.|
+|`tartarus`|smp|boolean|No|`true`|Initialize appliocation processors.|
 
 ### Path
 Paths consist of file/directory names separated by slashes (`/`). The names should only contains alphanumeric characters (`a-zA-Z0-9`). Example: `/sys/kernel.elf`. Currently this path is relative to the partition the config is found on.

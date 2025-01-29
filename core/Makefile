@@ -27,7 +27,7 @@ endif
 C_FLAGS := -std=gnu2x -ffreestanding
 C_FLAGS += -fno-stack-protector -fno-stack-check -fno-omit-frame-pointer -fno-strict-aliasing -fno-lto
 C_FLAGS += -Wall -Wextra -Wvla -Wshadow
-C_FLAGS += -Isrc
+C_FLAGS += -I$(SRC_DIRECTORY)/core/src -I$(SRC_DIRECTORY)
 LD_FLAGS := -nostdlib -z noexecstack
 DEFINES := -D__ENV_$(shell echo $(ENVIRONMENT) | tr a-z A-Z) -D__PLATFORM_$(shell echo $(PLATFORM) | tr a-z A-Z | tr - _)
 
@@ -47,6 +47,7 @@ endif
 
 ifeq ($(PLATFORM), x86_64-bios)
     C_FLAGS += -m32 -march=i686 -fno-PIC
+    C_FLAGS += -D __TARTARUS_NO_PTR
     LD_FLAGS += -m elf_i386 -static
     ASM_FLAGS := -f elf32
 endif
