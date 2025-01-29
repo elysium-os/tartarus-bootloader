@@ -118,7 +118,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
 
         elf64_addr_t aligned_vaddr = program_header.vaddr - program_header.vaddr % PMM_GRANULARITY;
         elf64_xword_t aligned_size = (program_header.memsz + (program_header.vaddr % PMM_GRANULARITY) + PMM_GRANULARITY - 1) / PMM_GRANULARITY * PMM_GRANULARITY;
-        arch_vm_map(address_space, (uintptr_t) addr, aligned_vaddr, aligned_size, program_header.flags & 0b111);
+        arch_vm_map(address_space, MATH_FLOOR((uintptr_t) addr, PMM_GRANULARITY), aligned_vaddr, aligned_size, program_header.flags & 0b111);
 
         if(program_header.type != PT_LOAD) continue;
         if(file->ops->read(file, addr, program_header.offset, program_header.filesz) != program_header.filesz) {
