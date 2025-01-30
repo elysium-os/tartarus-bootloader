@@ -205,7 +205,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
         tartarus_cpu_t *bsp_cpu = heap_alloc(sizeof(tartarus_cpu_t));
         bsp_cpu->lapic_id = x86_64_lapic_id();
         bsp_cpu->initialization_failed = false;
-        bsp_cpu->wake_on_write = NULL;
+        bsp_cpu->wake_on_write = (__TARTARUS_PTR(uint64_t *)) 0;
         boot_info->cpu_count = 1;
         boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, bsp_cpu);
         boot_info->bsp_index = 0;
