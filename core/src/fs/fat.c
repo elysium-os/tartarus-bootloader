@@ -154,12 +154,14 @@ static uint32_t next_cluster(fs_data_t *fs_data, uint32_t cluster) {
         case FAT_TYPE_16: cluster_addr = FAT_OFFSET(fs_data) + cluster * sizeof(uint16_t); break;
         case FAT_TYPE_32: cluster_addr = FAT_OFFSET(fs_data) + cluster * sizeof(uint32_t); break;
     }
+
     uint64_t lba = cluster_addr / fs_data->partition->disk->sector_size;
     uint64_t offset = cluster_addr % fs_data->partition->disk->sector_size;
     if(fs_data->cache_lba != lba) {
         fs_data->cache_lba = lba;
         disk_read(fs_data->partition, lba * fs_data->partition->disk->sector_size, fs_data->partition->disk->sector_size, fs_data->cache);
     }
+
     switch(fs_data->fat_meta.type) {
         case FAT_TYPE_12: __builtin_unreachable();
         case FAT_TYPE_16: return *(uint16_t *) (uintptr_t) ((uintptr_t) fs_data->cache + offset);

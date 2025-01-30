@@ -135,7 +135,7 @@ bool arch_disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, vo
         dap.memory_offset = INT_16BIT_OFFSET(buf);
         regs.eax = (0x42 << 8);
         int_exec(0x13, &regs);
-        if(regs.eflags & EFLAGS_CF) return true;
+        if((regs.eflags & EFLAGS_CF) != 0) return true;
         lba += tmp_sec_count;
 
         memcpy(dest, buf, tmp_sec_count * disk->sector_size);
