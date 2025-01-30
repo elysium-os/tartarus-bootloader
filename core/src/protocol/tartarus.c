@@ -16,6 +16,7 @@
 
 #ifdef __ARCH_X86_64
 #include "arch/x86_64/cpu.h"
+#include "arch/x86_64/lapic.h"
 #include "arch/x86_64/smp.h"
 #endif
 
@@ -40,7 +41,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
 
     // Setup HHDM
     void *address_space = arch_vm_create_address_space();
-    arch_vm_map(address_space, 0, 0, HHDM_MIN_SIZE - 0, HHDM_FLAGS);
+    arch_vm_map(address_space, VM_PAGE_GRANULARITY, VM_PAGE_GRANULARITY, HHDM_MIN_SIZE - VM_PAGE_GRANULARITY, HHDM_FLAGS);
     arch_vm_map(address_space, VM_PAGE_GRANULARITY, HHDM_OFFSET + VM_PAGE_GRANULARITY, HHDM_MIN_SIZE - VM_PAGE_GRANULARITY, HHDM_FLAGS);
 
     uint64_t hhdm_size = HHDM_MIN_SIZE;
@@ -62,7 +63,26 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
         arch_vm_map(address_space, base, base, length, HHDM_FLAGS);
         arch_vm_map(address_space, base, HHDM_OFFSET + base, length, HHDM_FLAGS);
     }
-    arch_vm_load_address_space(address_space);
+
+// FIX: this is just a hack to fix <1GB mappings breaking 4kb ones
+//      bios fb will be under the 4GB mapping
+//      but really we should check whether this conflicts with regions or not
+#ifdef __PLATFORM_X86_64_UEFI
+    arch_vm_map(
+        address_space,
+        (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY),
+        (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY),
+        MATH_CEIL(fb->pitch * fb->height, VM_PAGE_GRANULARITY),
+        HHDM_FLAGS
+    );
+    arch_vm_map(
+        address_space,
+        (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY),
+        (uint64_t) ((uintptr_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY)) + HHDM_OFFSET,
+        MATH_CEIL(fb->size, VM_PAGE_GRANULARITY),
+        HHDM_FLAGS
+    );
+#endif
     log(LOG_LEVEL_INFO, "HHDM mapped at offset %#llx (of size %#llx)", HHDM_OFFSET, hhdm_size);
 
     // Load kernel
@@ -161,28 +181,39 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
 #ifdef __ARCH_X86_64
-    uint8_t cpu_count = 0;
-    for(x86_64_smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
+    if(cpus != NULL) {
+        uint8_t cpu_count = 0;
+        for(x86_64_smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
 
-    uint8_t bsp_index = 0;
-    tartarus_cpu_t *cpu_array = heap_alloc(sizeof(tartarus_cpu_t) * cpu_count);
-    x86_64_smp_cpu_t *cpu = cpus;
-    for(uint16_t i = 0; i < cpu_count; i++, cpu = cpu->next) {
-        if(cpu->is_bsp) {
-            bsp_index = i;
-            cpu_array[i].wake_on_write = (__TARTARUS_PTR(uint64_t *)) 0;
-        } else {
-            cpu_array[i].wake_on_write = HHDM_CAST(uint64_t *, cpu->wake_on_write);
+        uint8_t bsp_index = 0;
+        tartarus_cpu_t *cpu_array = heap_alloc(sizeof(tartarus_cpu_t) * cpu_count);
+        x86_64_smp_cpu_t *cpu = cpus;
+        for(uint16_t i = 0; i < cpu_count; i++, cpu = cpu->next) {
+            if(cpu->is_bsp) {
+                bsp_index = i;
+                cpu_array[i].wake_on_write = (__TARTARUS_PTR(uint64_t *)) 0;
+            } else {
+                cpu_array[i].wake_on_write = HHDM_CAST(uint64_t *, cpu->wake_on_write);
+            }
+            cpu_array[i].lapic_id = cpu->lapic_id;
+            cpu_array[i].initialization_failed = cpu->init_failed;
         }
-        cpu_array[i].lapic_id = cpu->lapic_id;
-        cpu_array[i].initialization_failed = cpu->init_failed;
+        boot_info->cpu_count = cpu_count;
+        boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, cpu_array);
+        boot_info->bsp_index = bsp_index;
+    } else {
+        tartarus_cpu_t *bsp_cpu = heap_alloc(sizeof(tartarus_cpu_t));
+        bsp_cpu->lapic_id = x86_64_lapic_id();
+        bsp_cpu->initialization_failed = false;
+        bsp_cpu->wake_on_write = NULL;
+        boot_info->cpu_count = 1;
+        boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, bsp_cpu);
+        boot_info->bsp_index = 0;
     }
-    boot_info->cpu_count = cpu_count;
-    boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, cpu_array);
-    boot_info->bsp_index = bsp_index;
 #endif
 
 #ifdef __PLATFORM_X86_64_UEFI
+    log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
     x86_64_uefi_efi_bootservices_exit();
 #endif
 
@@ -204,6 +235,8 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     }
     boot_info->memory_map.entries = HHDM_CAST(tartarus_memory_map_entry_t *, memory_map_entries);
     boot_info->memory_map.size = g_pmm_map_size;
+
+    arch_vm_load_address_space(address_space);
 
     protocol_tartarus_handoff(kernel->entry, stack, HHDM_CAST(uint64_t, boot_info));
     __builtin_unreachable();
