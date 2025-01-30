@@ -4,19 +4,19 @@
 
 #include "arch/x86_64/msr.h"
 
-#include <cpuid.h>
-
 bool g_x86_64_cpu_nx_support = false;
 bool g_x86_64_cpu_pdpe1gb_support = false;
 bool g_x86_64_cpu_lapic_support = false;
 
 void x86_64_cpu_init() {
-    unsigned int edx = 0, unused;
-    if(__get_cpuid(0x80000001, &unused, &unused, &unused, &edx) != 0) {
-        g_x86_64_cpu_nx_support = (edx & (1 << 20)) != 0;
-        g_x86_64_cpu_pdpe1gb_support = (edx & (1 << 26)) != 0;
-        g_x86_64_cpu_lapic_support = (edx & (1 << 9)) != 0;
-    }
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000001), "c"(0));
+    g_x86_64_cpu_nx_support = (edx & (1 << 20)) != 0;
+    g_x86_64_cpu_pdpe1gb_support = (edx & (1 << 26)) != 0;
+
+    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x1), "c"(0));
+    g_x86_64_cpu_lapic_support = (edx & (1 << 9)) != 0;
 
     if(g_x86_64_cpu_nx_support) {
         x86_64_msr_write(X86_64_MSR_EFER, x86_64_msr_read(X86_64_MSR_EFER) | (1 << 11));

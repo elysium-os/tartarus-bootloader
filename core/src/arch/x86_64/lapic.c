@@ -5,8 +5,6 @@
 
 #include "arch/x86_64/msr.h"
 
-#include <cpuid.h>
-
 #define MSR_LAPIC_BASE 0x1B
 #define MSR_LAPIC_BASE_MASK 0xFFFFF000
 

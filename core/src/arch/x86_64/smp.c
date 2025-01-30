@@ -11,8 +11,6 @@
 #include "arch/x86_64/lapic.h"
 #include "arch/x86_64/tsc.h"
 
-#include <cpuid.h>
-
 #define CYCLES_10MIL 10000000
 #define STACK_SIZE 4
 
@@ -60,8 +58,8 @@ extern nullptr_t g_apinit_start[];
 extern nullptr_t g_apinit_end[];
 
 static uint8_t bsp_lapic_id() {
-    unsigned int ebx = 0, unused = 0;
-    if(__get_cpuid(1, &unused, &ebx, &unused, &unused) == 0) panic("failed to retrieve BSP lapic id");
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(1), "c"(0));
     return ebx >> 24;
 }
 
