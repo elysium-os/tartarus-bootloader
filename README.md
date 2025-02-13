@@ -1,4 +1,4 @@
-![logo](https://files.thenest.dev/tartarus-banner.png)
+![logo](https://files.thenest.dev/tartarus-banner-thin.png)
 
 Tartarus is a bootloader targeting 64bit architectures. Currently only x86_64 is supported, both legacy bios and uefi. Tartarus supports multiple protocols, one of them being the [Tartarus Protocol](./protocol.md). The [config.md](./config.md) file describes the configuration file tartarus uses to boot.
 
