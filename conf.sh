@@ -26,8 +26,14 @@ while [[ $# -gt 0 ]]; do
         --production)
             ENVIRONMENT="production"
             ;;
-        --toolchain-triplet=*)
-            TC_TRIPLET=${1#*=}
+        --toolchain-compiler=*)
+            TC_COMPILER=${1#*=}
+            ;;
+        --toolchain-linker=*)
+            TC_LINKER=${1#*=}
+            ;;
+        --toolchain-objcopy=*)
+            TC_OBJCOPY=${1#*=}
             ;;
         --vendor-libgcc=*)
             VENDOR_LIBGCC=${1#*=}
@@ -52,8 +58,18 @@ if [ -z "$PLATFORM" ]; then
     exit 1
 fi
 
-if [ -z "$TC_TRIPLET" ]; then
-    >&2 echo "No toolchain triplet provided"
+if [ -z "$TC_COMPILER" ]; then
+    >&2 echo "No compiler provided"
+    exit 1
+fi
+
+if [ -z "$TC_LINKER" ]; then
+    >&2 echo "No linker provided"
+    exit 1
+fi
+
+if [ -z "$TC_OBJCOPY" ]; then
+    >&2 echo "No objcopy provided"
     exit 1
 fi
 
@@ -69,9 +85,9 @@ echo "export PREFIX := $PREFIX" >> $CONFIG_FILE
 echo "export PLATFORM := $PLATFORM" >> $CONFIG_FILE
 echo "export ENVIRONMENT := $ENVIRONMENT" >> $CONFIG_FILE
 
-echo "export CC := $TC_TRIPLET-gcc" >> $CONFIG_FILE
-echo "export OBJCOPY := $TC_TRIPLET-objcopy" >> $CONFIG_FILE
-echo "export LD := $TC_TRIPLET-ld" >> $CONFIG_FILE
+echo "export CC := $TC_COMPILER" >> $CONFIG_FILE
+echo "export OBJCOPY := $TC_OBJCOPY" >> $CONFIG_FILE
+echo "export LD := $TC_LINKER" >> $CONFIG_FILE
 echo "export NASM := nasm" >> $CONFIG_FILE
 
 if [ -z "$VENDOR_LIBGCC" ]; then
