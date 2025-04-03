@@ -15,7 +15,7 @@ protocol_tartarus_handoff:
 
     mov eax, cr4
     or eax, 1 << 5                              ; Enable PAE bit
-    mov cr4, eax                                ; Move the modified register back
+    mov cr4, eax
 
     mov ecx, 0xC0000080
     rdmsr
