@@ -1,0 +1,7 @@
+/subprojects/*
+!/subprojects/*.wrap
+
+build/
+
+.cache
+.clangd

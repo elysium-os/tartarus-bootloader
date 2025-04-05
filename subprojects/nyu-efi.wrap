@@ -1,0 +1,8 @@
+[wrap-git]
+directory = nyu-efi
+url = https://codeberg.org/osdev/nyu-efi.git
+revision = trunk
+
+patch_url = https://files.elysium-os.org/meson-patches/nyu-efi.zip
+patch_filename = nyu-efi.zip
+patch_hash = 0f4d366af82030304873dc78b80ce6d7053b1f4e4344e1bb8f346a6361de4cbd

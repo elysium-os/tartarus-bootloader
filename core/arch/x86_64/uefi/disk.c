@@ -7,7 +7,7 @@
 #include "memory/heap.h"
 #include "memory/pmm.h"
 
-#include "arch/x86_64/uefi/efi.h"
+#include "arch/x86_64/uefi/uefi.h"
 
 #define UEFI_DISK(DISK) (CONTAINER_OF((DISK), uefi_disk_t, common))
 

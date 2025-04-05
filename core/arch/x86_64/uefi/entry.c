@@ -4,7 +4,7 @@
 #include "memory/pmm.h"
 
 #include "arch/x86_64/cpu.h"
-#include "arch/x86_64/uefi/efi.h"
+#include "arch/x86_64/uefi/uefi.h"
 
 #define PAGES_RESERVED_FOR_UEFI 64
 

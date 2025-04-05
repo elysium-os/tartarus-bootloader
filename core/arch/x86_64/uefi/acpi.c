@@ -1,6 +1,6 @@
 #include "arch/acpi.h"
 
-#include "arch/x86_64/uefi/efi.h"
+#include "arch/x86_64/uefi/uefi.h"
 
 static bool compare_guid(EFI_GUID a, EFI_GUID b) {
     bool data4_match = true;

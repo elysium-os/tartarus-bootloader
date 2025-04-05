@@ -1,4 +1,4 @@
-#include "efi.h"
+#include "uefi.h"
 
 #include "common/panic.h"
 #include "memory/heap.h"

@@ -21,7 +21,7 @@
 #endif
 
 #ifdef __PLATFORM_X86_64_UEFI
-#include "arch/x86_64/uefi/efi.h"
+#include "arch/x86_64/uefi/uefi.h"
 #endif
 
 #define MAJOR_VERSION 2

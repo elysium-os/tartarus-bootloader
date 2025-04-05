@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #ifdef __PLATFORM_X86_64_UEFI
-#include "arch/x86_64/uefi/efi.h"
+#include "arch/x86_64/uefi/uefi.h"
 #endif
 
 #define LINUX_IMAGE_SIGNATURE 0x53726448

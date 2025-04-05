@@ -2,7 +2,7 @@
 
 #include "lib/time.h"
 
-#include "arch/x86_64/uefi/efi.h"
+#include "arch/x86_64/uefi/uefi.h"
 
 time_t arch_time() {
     EFI_TIME time;

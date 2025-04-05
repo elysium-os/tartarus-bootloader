@@ -3,7 +3,7 @@
 #include "common/panic.h"
 #include "memory/heap.h"
 
-#include "arch/x86_64/uefi/efi.h"
+#include "arch/x86_64/uefi/uefi.h"
 
 fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict_rgb) {
     EFI_STATUS status;
