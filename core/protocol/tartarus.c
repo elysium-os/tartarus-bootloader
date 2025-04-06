@@ -135,6 +135,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     x86_64_smp_cpu_t *cpus = NULL;
     if(config_find_bool(config, "smp", true)) {
         void *smp_reserved_page = pmm_alloc(PMM_AREA_LOWMEM, 1);
+        log(LOG_LEVEL_INFO, "APINIT reserved page: %#lx", (uintptr_t) smp_reserved_page);
         if(smp_reserved_page == NULL) panic("unable to reserve SMP initialization page");
         if(!g_x86_64_cpu_lapic_support) panic("LAPIC not supported. LAPIC is required for SMP initialization");
 
@@ -180,6 +181,14 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     boot_info->module_count = module_count;
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
+#ifdef __PLATFORM_X86_64_UEFI
+    log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
+    x86_64_uefi_efi_bootservices_exit();
+#endif
+
+    log(LOG_LEVEL_INFO, "stopping");
+    for(;;);
+
 #ifdef __ARCH_X86_64
     if(cpus != NULL) {
         uint8_t cpu_count = 0;
@@ -210,11 +219,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
         boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, bsp_cpu);
         boot_info->bsp_index = 0;
     }
-#endif
-
-#ifdef __PLATFORM_X86_64_UEFI
-    log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
-    x86_64_uefi_efi_bootservices_exit();
 #endif
 
     tartarus_memory_map_entry_t *memory_map_entries = heap_alloc(sizeof(tartarus_memory_map_entry_t) * g_pmm_map_size);

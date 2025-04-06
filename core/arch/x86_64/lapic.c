@@ -35,7 +35,7 @@ void x86_64_lapic_ipi_init(uint8_t lapic_id) {
 
 void x86_64_lapic_ipi_startup(uint8_t lapic_id, void *startup_page) {
     size_t startup_id = (uintptr_t) startup_page / 0x1000;
-    if(startup_id > 0xFF) panic("startup page exceeds the lower bound");
+    if(startup_id > 0xFF) panic("startup page exceeds 0xFF000");
 
     lapic_write(REG_ICR2, (uint32_t) lapic_id << 24);
     lapic_write(REG_ICR1, ICR_ASSERT | ICR_STARTUP | startup_id);

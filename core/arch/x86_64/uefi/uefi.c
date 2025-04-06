@@ -15,5 +15,7 @@ void x86_64_uefi_efi_bootservices_exit() {
         status = g_x86_64_uefi_efi_system_table->BootServices->GetMemoryMap(&umap_size, umap, &map_key, &descriptor_size, &descriptor_version);
         if(EFI_ERROR(status)) panic("unable retrieve the UEFI memory map for bootservices exit");
     }
-    g_x86_64_uefi_efi_system_table->BootServices->ExitBootServices(g_x86_64_uefi_efi_image_handle, map_key);
+
+    if(EFI_ERROR(g_x86_64_uefi_efi_system_table->BootServices->ExitBootServices(g_x86_64_uefi_efi_image_handle, map_key)))
+        panic("failed to exit bootservices"); // TODO: to do this properly we should retry a couple times
 }

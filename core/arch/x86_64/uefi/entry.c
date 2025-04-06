@@ -83,7 +83,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
             if(entry->NumberOfPages < reserve) reserve = entry->NumberOfPages;
             if(reserve > 0) {
                 pmm_map_add(entry->PhysicalStart, reserve * PMM_GRANULARITY, PMM_MAP_EFI_RECLAIMABLE);
-                reserved_for_uefi -= reserve;
+                reserved_for_uefi += reserve;
                 if(reserve == entry->NumberOfPages) continue;
             }
 
