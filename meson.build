@@ -2,6 +2,8 @@ project('Tartarus Bootloader', meson_version : '>=1.4.0')
 
 tartarus_header = include_directories('.')
 
+tartarus_dep = declare_dependency(include_directories : tartarus_header)
+
 if not get_option('header_only')
     deps = []
 
