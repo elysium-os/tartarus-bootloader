@@ -186,9 +186,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     x86_64_uefi_efi_bootservices_exit();
 #endif
 
-    log(LOG_LEVEL_INFO, "stopping");
-    for(;;);
-
 #ifdef __ARCH_X86_64
     if(cpus != NULL) {
         uint8_t cpu_count = 0;
