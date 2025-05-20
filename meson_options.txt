@@ -1,2 +1,0 @@
-option('platform', type: 'combo', choices: ['x86_64-bios', 'x86_64-uefi'])
-option('header_only', type: 'boolean', value: false)
