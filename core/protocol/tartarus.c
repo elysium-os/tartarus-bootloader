@@ -130,22 +130,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     // Allocate stack
     void *stack = pmm_alloc(PMM_AREA_STANDARD, STACK_SIZE) + (STACK_SIZE * PMM_GRANULARITY);
 
-    // Initialize SMP
-#ifdef __ARCH_X86_64
-    x86_64_smp_cpu_t *cpus = NULL;
-    if(config_find_bool(config, "smp", true)) {
-        void *smp_reserved_page = pmm_alloc(PMM_AREA_LOWMEM, 1);
-        log(LOG_LEVEL_INFO, "APINIT reserved page: %#lx", (uintptr_t) smp_reserved_page);
-        if(smp_reserved_page == NULL) panic("unable to reserve SMP initialization page");
-        if(!g_x86_64_cpu_lapic_support) panic("LAPIC not supported. LAPIC is required for SMP initialization");
-
-        acpi_sdt_header_t *madt = acpi_find_table(rsdp, "APIC");
-        if(madt == NULL) panic("ACPI MADT table not present");
-        cpus = x86_64_smp_initialize_aps(madt, smp_reserved_page, address_space);
-        log(LOG_LEVEL_INFO, "Initialized SMP");
-    }
-#endif
-
     // Setup boot info
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
     boot_info->version = ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION;
@@ -186,7 +170,21 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
     x86_64_uefi_efi_bootservices_exit();
 #endif
 
+// Initialize SMP
 #ifdef __ARCH_X86_64
+    x86_64_smp_cpu_t *cpus = NULL;
+    if(config_find_bool(config, "smp", true)) {
+        void *smp_reserved_page = pmm_alloc(PMM_AREA_LOWMEM, 1);
+        log(LOG_LEVEL_INFO, "APINIT reserved page: %#lx", (uintptr_t) smp_reserved_page);
+        if(smp_reserved_page == NULL) panic("unable to reserve SMP initialization page");
+        if(!g_x86_64_cpu_lapic_support) panic("LAPIC not supported. LAPIC is required for SMP initialization");
+
+        acpi_sdt_header_t *madt = acpi_find_table(rsdp, "APIC");
+        if(madt == NULL) panic("ACPI MADT table not present");
+        cpus = x86_64_smp_initialize_aps(madt, smp_reserved_page, address_space);
+        log(LOG_LEVEL_INFO, "Initialized SMP");
+    }
+
     if(cpus != NULL) {
         uint8_t cpu_count = 0;
         for(x86_64_smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
