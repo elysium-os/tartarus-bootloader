@@ -16,15 +16,6 @@ static void qemu_debug_log(char ch) {
 static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qemu_debug_log};
 #endif
 
-static void uefi_char_out(char ch) {
-    if(ch == '\n') uefi_char_out('\r');
-
-    CHAR16 str[2] = {ch, 0};
-    g_x86_64_uefi_efi_system_table->ConOut->OutputString(g_x86_64_uefi_efi_system_table->ConOut, str);
-}
-
-static log_sink_t g_uefi_sink = {.level = LOG_LEVEL_DEBUG, .char_out = uefi_char_out};
-
 EFI_SYSTEM_TABLE *g_x86_64_uefi_efi_system_table;
 EFI_HANDLE g_x86_64_uefi_efi_image_handle;
 
@@ -91,7 +82,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
             UINTN pages = entry->NumberOfPages - reserve;
 
             EFI_PHYSICAL_ADDRESS address = start_address;
-            status = system_table->BootServices->AllocatePages(AllocateAddress, EfiBootServicesData, pages, &address);
+            status = system_table->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, pages, &address);
             if(!EFI_ERROR(status)) {
                 pmm_map_add(start_address, pages * PMM_GRANULARITY, PMM_MAP_TYPE_FREE);
                 continue;
@@ -99,7 +90,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
 
             for(EFI_PHYSICAL_ADDRESS j = start_address; j < start_address + pages * PMM_GRANULARITY; j += PMM_GRANULARITY) {
                 address = j;
-                status = system_table->BootServices->AllocatePages(AllocateAddress, EfiBootServicesData, 1, &address);
+                status = system_table->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, 1, &address);
                 if(EFI_ERROR(status)) continue;
                 pmm_map_add(j, PMM_GRANULARITY, PMM_MAP_TYPE_FREE);
             }

@@ -16,6 +16,7 @@ typedef struct log_sink {
 } log_sink_t;
 
 void log_sink_add(log_sink_t *sink);
+void log_sink_remove(log_sink_t *sink);
 
 void log(log_level_t level, const char *fmt, ...);
 void log_list(log_level_t level, const char *fmt, va_list list);

@@ -3,7 +3,6 @@
 #include "lib/format.h"
 
 #include <stddef.h>
-#include <stdint.h>
 
 static log_sink_t *g_sinks = NULL;
 
@@ -37,6 +36,19 @@ static const char *log_level_stringify(log_level_t level) {
 void log_sink_add(log_sink_t *sink) {
     sink->next = g_sinks;
     g_sinks = sink;
+}
+
+void log_sink_remove(log_sink_t *sink) {
+    if(g_sinks == sink) {
+        g_sinks = sink->next;
+        return;
+    }
+
+    for(log_sink_t *cur = g_sinks; sink != NULL; sink = sink->next) {
+        if(cur->next != sink) continue;
+        cur->next = sink->next;
+        break;
+    }
 }
 
 void log_list(log_level_t level, const char *fmt, va_list list) {
