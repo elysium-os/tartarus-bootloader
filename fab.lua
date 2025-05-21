@@ -115,9 +115,7 @@ if opt_platform:starts_with("x86_64") then
 
         table.insert(defines, "__PLATFORM_X86_64_UEFI")
 
-        table.extend(asm_flags, {
-            "-f", "elf64"
-        })
+        table.extend(asm_flags, { "-f", "elf64" })
 
         table.extend(ld_flags, {
             "-melf_x86_64",
@@ -190,14 +188,14 @@ if opt_platform:starts_with("x86_64") then
             error("bash not found")
         end
 
+        local truncate = fab.find_executable("truncate")
+        if truncate == nil then
+            error("truncate not found")
+        end
+
         local wc = fab.find_executable("wc")
         if wc == nil then
             error("wc not found")
-        end
-
-        local dd = fab.find_executable("dd")
-        if dd == nil then
-            error("dd not found")
         end
 
         local cp = fab.find_executable("cp")
@@ -207,7 +205,7 @@ if opt_platform:starts_with("x86_64") then
 
         local efi = fab.rule({
             name = "pad_efi",
-            command = { bash, "-c", "\"" .. cp.path .. " @IN@ @OUT@ && " .. dd.path .. " if=/dev/zero of=@OUT@ bs=4096 count=0 seek=$((($(" .. wc.path .. " -c < @OUT@)+4095)/4096))" .. "\"" },
+            command = { bash, "-c", "\"" .. cp.path .. " @IN@ @OUT@ && " .. truncate.path .. " -s $((($(" .. wc.path .. " -c < @OUT@)+4095)/4096*4))K @OUT@" .. "\"" },
             description = "Padding EFI @IN@ to @OUT@"
         }):build("tartarus.efi", { binary }, {})
 
