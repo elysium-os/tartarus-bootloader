@@ -131,11 +131,11 @@ if opt_platform:starts_with("x86_64") then
         )
 
         table.extend(core_sources, sources(
-            path(nyu_efi.path, "src/reloc_x86_64.c"),
-            path(nyu_efi.path, "src/crt0-efi-x86_64.S")
+            path(nyu_efi.path, "x86_64/reloc.c"),
+            path(nyu_efi.path, "x86_64/entry.S")
         ))
         table.insert(include_dirs, builtins.c.include_dir(path(nyu_efi.path, "inc")))
-        table.insert(ld_flags, "-T" .. fab.path_rel(path(nyu_efi.path, "src/elf_x86_64_efi.lds")))
+        table.insert(ld_flags, "-T" .. fab.path_rel(path(nyu_efi.path, "x86_64/link_script.lds")))
     end
 
     if opt_platform == "x86_64-bios" then
