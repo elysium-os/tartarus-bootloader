@@ -68,12 +68,20 @@ typedef struct [[gnu::packed]] {
 } tartarus_framebuffer_t;
 
 typedef struct [[gnu::packed]] {
+    uint64_t vaddr;
+    uint64_t size;
+    bool read, write, execute;
+} tartarus_kernel_segment_t;
+
+typedef struct [[gnu::packed]] {
     uint16_t version;
 
     struct [[gnu::packed]] {
         uint64_t vaddr;
         uint64_t paddr;
         uint64_t size;
+        uint64_t segment_count;
+        __TARTARUS_PTR(tartarus_kernel_segment_t *) segments;
     } kernel;
     struct [[gnu::packed]] {
         uint64_t offset;

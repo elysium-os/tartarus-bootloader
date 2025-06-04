@@ -92,6 +92,10 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
 
     elf64_addr_t lowest_vaddr = UINT64_MAX;
     elf64_addr_t highest_vaddr = 0;
+
+    elf_region_t **regions = NULL;
+    size_t region_count = 0;
+
     for(elf64_half_t i = 0; i < header.program_header_entry_count; i++) {
         elf64_program_header_t program_header;
         if(file->ops->read(file, &program_header, header.program_header_offset + header.program_header_entry_size * i, header.program_header_entry_size) != header.program_header_entry_size) {
@@ -101,6 +105,16 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
         if(program_header.type != PT_LOAD || program_header.memsz == 0) continue;
         if(program_header.vaddr < lowest_vaddr) lowest_vaddr = program_header.vaddr;
         if(program_header.vaddr + program_header.memsz > highest_vaddr) highest_vaddr = program_header.vaddr + program_header.memsz;
+
+        elf_region_t *region = heap_alloc(sizeof(elf_region_t));
+        region->vaddr = program_header.vaddr;
+        region->size = program_header.memsz;
+        region->read = (program_header.flags & VM_FLAG_READ) != 0;
+        region->write = (program_header.flags & VM_FLAG_WRITE) != 0;
+        region->execute = (program_header.flags & VM_FLAG_EXEC) != 0;
+
+        regions = heap_realloc(region, ++region_count * sizeof(elf_region_t *));
+        regions[region_count - 1] = region;
     }
 
     elf64_xword_t size = highest_vaddr - lowest_vaddr;
@@ -133,5 +147,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
     image->vaddr = lowest_vaddr;
     image->size = size;
     image->entry = header.entry;
+    image->regions = regions;
+    image->count = region_count;
     return image;
 }
