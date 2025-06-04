@@ -113,7 +113,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
         region->write = (program_header.flags & VM_FLAG_WRITE) != 0;
         region->execute = (program_header.flags & VM_FLAG_EXEC) != 0;
 
-        regions = heap_realloc(region, ++region_count * sizeof(elf_region_t *));
+        regions = heap_realloc(regions, ++region_count * sizeof(elf_region_t *));
         regions[region_count - 1] = region;
     }
 
