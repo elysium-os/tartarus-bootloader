@@ -42,8 +42,8 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
 
     // Setup HHDM
     void *address_space = arch_vm_create_address_space();
-    arch_vm_map(address_space, VM_PAGE_GRANULARITY, VM_PAGE_GRANULARITY, HHDM_MIN_SIZE - VM_PAGE_GRANULARITY, HHDM_FLAGS);
-    arch_vm_map(address_space, VM_PAGE_GRANULARITY, HHDM_OFFSET + VM_PAGE_GRANULARITY, HHDM_MIN_SIZE - VM_PAGE_GRANULARITY, HHDM_FLAGS);
+    arch_vm_map(address_space, 0, 0, HHDM_MIN_SIZE, HHDM_FLAGS);
+    arch_vm_map(address_space, 0, HHDM_OFFSET, HHDM_MIN_SIZE, HHDM_FLAGS);
 
     uint64_t hhdm_size = HHDM_MIN_SIZE;
     for(size_t i = 0; i < g_pmm_map_size; i++) {
