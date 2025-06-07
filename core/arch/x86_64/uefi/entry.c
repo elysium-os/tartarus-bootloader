@@ -53,7 +53,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
         switch(entry->Type) {
             case EfiConventionalMemory:      type = PMM_MAP_TYPE_FREE; break;
             case EfiBootServicesCode:
-            case EfiBootServicesData:        type = PMM_MAP_EFI_RECLAIMABLE; break;
+            case EfiBootServicesData:        type = PMM_MAP_TYPE_EFI_RECLAIMABLE; break;
             case EfiACPIReclaimMemory:       type = PMM_MAP_TYPE_ACPI_RECLAIMABLE; break;
             case EfiACPIMemoryNVS:           type = PMM_MAP_TYPE_ACPI_NVS; break;
             case EfiLoaderCode:
@@ -73,7 +73,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
             size_t reserve = PAGES_RESERVED_FOR_UEFI - reserved_for_uefi;
             if(entry->NumberOfPages < reserve) reserve = entry->NumberOfPages;
             if(reserve > 0) {
-                pmm_map_add(entry->PhysicalStart, reserve * PMM_GRANULARITY, PMM_MAP_EFI_RECLAIMABLE);
+                pmm_map_add(entry->PhysicalStart, reserve * PMM_GRANULARITY, PMM_MAP_TYPE_EFI_RECLAIMABLE);
                 reserved_for_uefi += reserve;
                 if(reserve == entry->NumberOfPages) continue;
             }
