@@ -24,3 +24,4 @@ typedef struct {
 } elf_loaded_image_t;
 
 elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space);
+size_t elf_read_section(vfs_node_t *file, const char *section_name, void **data);

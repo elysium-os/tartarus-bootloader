@@ -4,6 +4,7 @@
 #include "common/log.h"
 #include "lib/math.h"
 #include "lib/mem.h"
+#include "lib/string.h"
 #include "memory/heap.h"
 #include "memory/pmm.h"
 
@@ -22,12 +23,6 @@
 #define PT_SHLIB 5
 #define PT_PHDR 6
 #define PT_TLS 7
-
-#define ELF_ASSERT(ASSERTION, WARN_MSG)            \
-    if(!(ASSERTION)) {                             \
-        log(LOG_LEVEL_ERROR, "elf: %s", WARN_MSG); \
-        return NULL;                               \
-    }
 
 typedef uint64_t elf64_addr_t;
 typedef uint64_t elf64_off_t;
@@ -76,19 +71,70 @@ typedef struct [[gnu::packed]] {
     elf64_xword_t alignment;
 } elf64_program_header_t;
 
+typedef struct [[gnu::packed]] {
+    elf64_word_t name;
+    elf64_word_t type;
+    elf64_xword_t flags;
+    elf64_addr_t addr;
+    elf64_off_t offset;
+    elf64_xword_t size;
+    elf64_word_t link;
+    elf64_word_t info;
+    elf64_xword_t addralign;
+    elf64_xword_t entsize;
+} elf64_section_header_t;
+
+static bool validate_elf(elf64_header_t *header) {
+    if(memcmp(header->identifier.magic, ELF_MAGIC, 4) != 0) {
+        log(LOG_LEVEL_ERROR, "elf: invalid identififer");
+        return false;
+    }
+
+#ifdef __ARCH_X86_64
+    if(header->machine != MACHINE_386) {
+        log(LOG_LEVEL_ERROR, "elf: only the i386:x86-64 instruction-set is supported");
+        return false;
+    }
+
+    if(header->identifier.encoding != LITTLE_ENDIAN) {
+        log(LOG_LEVEL_ERROR, "elf: only little endian encoding is supported");
+        return false;
+    }
+#endif
+
+    if(header->identifier.class != CLASS64) {
+        log(LOG_LEVEL_ERROR, "elf: only the 64bit class is supported");
+        return false;
+    }
+
+    if(header->version > 1) {
+        log(LOG_LEVEL_ERROR, "elf: unsupported version");
+        return false;
+    }
+    if(header->type != TYPE_EXECUTABLE) {
+        log(LOG_LEVEL_ERROR, "elf: only executables are supported");
+        return false;
+    }
+
+    if(header->program_header_offset <= 0 && header->program_header_entry_count <= 0) {
+        log(LOG_LEVEL_ERROR, "elf: no program headers. very suspicious");
+        return false;
+    }
+
+    return true;
+}
+
+static bool read_header(vfs_node_t *file, elf64_header_t *header) {
+    if(file->ops->read(file, header, 0, sizeof(elf64_header_t)) != sizeof(elf64_header_t)) {
+        log(LOG_LEVEL_ERROR, "elf: unable to read header");
+        return false;
+    }
+    return validate_elf(header);
+}
+
 elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
     elf64_header_t header;
-    ELF_ASSERT(file->ops->read(file, &header, 0, sizeof(elf64_header_t)) == sizeof(elf64_header_t), "unable to read header");
-
-    ELF_ASSERT(memcmp(header.identifier.magic, ELF_MAGIC, 4) == 0, "invalid identififer");
-#ifdef __ARCH_X86_64
-    ELF_ASSERT(header.machine == MACHINE_386, "only the i386:x86-64 instruction-set is supported");
-    ELF_ASSERT(header.identifier.encoding == LITTLE_ENDIAN, "only little endian encoding is supported");
-#endif
-    ELF_ASSERT(header.identifier.class == CLASS64, "only the 64bit class is supported");
-    ELF_ASSERT(header.version <= 1, "unsupported version");
-    ELF_ASSERT(header.type == TYPE_EXECUTABLE, "only executables are supported");
-    ELF_ASSERT(header.program_header_offset > 0 && header.program_header_entry_count > 0, "no program headers?");
+    if(!read_header(file, &header)) return NULL;
 
     elf64_addr_t lowest_vaddr = UINT64_MAX;
     elf64_addr_t highest_vaddr = 0;
@@ -150,4 +196,45 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
     image->regions = regions;
     image->count = region_count;
     return image;
+}
+
+size_t elf_read_section(vfs_node_t *file, const char *section_name, void **data) {
+    elf64_header_t header;
+    if(!read_header(file, &header)) return 0;
+
+    elf64_section_header_t shstrtab_header;
+    if(file->ops->read(file, &shstrtab_header, header.section_header_offset + header.section_header_entry_size * header.shstrtab_index, header.section_header_entry_size) !=
+       header.section_header_entry_size)
+    {
+        log(LOG_LEVEL_WARN, "elf: failed to read shstrtab header");
+        return 0;
+    }
+
+    char *shstrtab = heap_alloc(shstrtab_header.size);
+    if(file->ops->read(file, shstrtab, shstrtab_header.offset, shstrtab_header.size) != shstrtab_header.size) {
+        log(LOG_LEVEL_WARN, "elf: failed to read shstrtab");
+        return 0;
+    }
+
+    for(elf64_half_t i = 0; i < header.section_header_entry_count; i++) {
+        elf64_section_header_t section_header;
+        if(file->ops->read(file, &section_header, header.section_header_offset + header.section_header_entry_size * i, header.section_header_entry_size) != header.section_header_entry_size) {
+            log(LOG_LEVEL_WARN, "elf: failed to read section header %u", i);
+            return 0;
+        }
+
+        if(string_cmp(&shstrtab[section_header.name], section_name) != 0) continue;
+
+        *data = heap_alloc(section_header.size);
+        if(file->ops->read(file, *data, section_header.offset, section_header.size) != section_header.size) {
+            log(LOG_LEVEL_WARN, "elf: failed to read section header `%s` data", shstrtab[section_header.name]);
+            heap_free(*data);
+            return 0;
+        }
+        heap_free(shstrtab);
+        return section_header.size;
+    }
+
+    heap_free(shstrtab);
+    return 0;
 }
