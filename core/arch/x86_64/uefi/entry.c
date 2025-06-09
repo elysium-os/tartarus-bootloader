@@ -57,7 +57,7 @@ EFI_HANDLE g_x86_64_uefi_efi_image_handle;
             case EfiACPIReclaimMemory:       type = PMM_MAP_TYPE_ACPI_RECLAIMABLE; break;
             case EfiACPIMemoryNVS:           type = PMM_MAP_TYPE_ACPI_NVS; break;
             case EfiLoaderCode:
-            case EfiLoaderData:
+            case EfiLoaderData:              type = PMM_MAP_TYPE_ALLOCATED; break;
             case EfiRuntimeServicesCode:
             case EfiRuntimeServicesData:
             case EfiUnusableMemory:

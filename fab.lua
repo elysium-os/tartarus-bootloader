@@ -205,7 +205,7 @@ if opt_platform:starts_with("x86_64") then
 
         local efi = fab.rule({
             name = "pad_efi",
-            command = { bash, "-c", "\"" .. cp.path .. " @IN@ @OUT@ && " .. truncate.path .. " -s $((($(" .. wc.path .. " -c < @OUT@)+4095)/4096*4))K @OUT@" .. "\"" },
+            command = { bash, "-c", "\"" .. cp.path .. " @IN@ @OUT@ && " .. truncate.path .. " -s $((( $(" .. wc.path .. " -c < @OUT@) + 4095) / 4096 * 4))K @OUT@" .. "\"" },
             description = "Padding EFI @IN@ to @OUT@"
         }):build("tartarus.efi", { binary }, {})
 
