@@ -183,30 +183,15 @@ if opt_platform:starts_with("x86_64") then
     end
 
     if opt_platform == "x86_64-uefi" then
-        local bash = fab.find_executable("bash")
-        if bash == nil then
-            error("bash not found")
-        end
-
-        local truncate = fab.find_executable("truncate")
-        if truncate == nil then
-            error("truncate not found")
-        end
-
-        local wc = fab.find_executable("wc")
-        if wc == nil then
-            error("wc not found")
-        end
-
-        local cp = fab.find_executable("cp")
-        if cp == nil then
-            error("cp not found")
+        local postprocess = fab.get_executable(path(fab.project_root(), "uefi_postprocess.sh"))
+        if postprocess == nil then
+            error("uefi_postprocess.sh not found")
         end
 
         local efi = fab.rule({
-            name = "pad_efi",
-            command = { bash, "-c", "\"" .. cp.path .. " @IN@ @OUT@ && " .. truncate.path .. " -s $((( $(" .. wc.path .. " -c < @OUT@) + 4095) / 4096 * 4))K @OUT@" .. "\"" },
-            description = "Padding EFI @IN@ to @OUT@"
+            name = "postprocess_efi",
+            command = { postprocess, "@IN@", "@OUT@" },
+            description = "Postprocessing @IN@ to @OUT@"
         }):build("tartarus.efi", { binary }, {})
 
         efi:install("share/tartarus/tartarus.efi")
