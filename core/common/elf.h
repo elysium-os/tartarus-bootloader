@@ -6,17 +6,20 @@
 #include <stdint.h>
 
 typedef struct {
-    uint64_t vaddr;
-    uint64_t size;
-    uint8_t read    : 1;
-    uint8_t write   : 1;
-    uint8_t execute : 1;
+    uint64_t real_vaddr;
+    uint64_t aligned_vaddr;
+    size_t aligned_size;
+
+    bool read    : 1;
+    bool write   : 1;
+    bool execute : 1;
 } elf_region_t;
 
 typedef struct {
-    uint64_t vaddr;
+    uint64_t aligned_vaddr;
+    size_t aligned_size;
+
     uint64_t paddr;
-    uint64_t size;
     uint64_t entry;
 
     size_t count;

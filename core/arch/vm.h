@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-// These flags are assumed to match the corresponding ELF flags
 #define VM_FLAG_EXEC (1 << 0)
 #define VM_FLAG_WRITE (1 << 1)
 #define VM_FLAG_READ (1 << 2)

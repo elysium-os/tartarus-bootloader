@@ -84,6 +84,12 @@ typedef struct [[gnu::packed]] {
     elf64_xword_t entsize;
 } elf64_section_header_t;
 
+typedef struct {
+    size_t region_index;
+    uint64_t offset;
+    uint64_t size;
+} region_load_t;
+
 static bool validate_elf(elf64_header_t *header) {
     if(memcmp(header->identifier.magic, ELF_MAGIC, 4) != 0) {
         log(LOG_LEVEL_ERROR, "elf: invalid identififer");
@@ -142,6 +148,9 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
     elf_region_t **regions = NULL;
     size_t region_count = 0;
 
+    region_load_t **loads = NULL;
+    size_t load_count = 0;
+
     for(elf64_half_t i = 0; i < header.program_header_entry_count; i++) {
         elf64_program_header_t program_header;
         if(file->ops->read(file, &program_header, header.program_header_offset + header.program_header_entry_size * i, header.program_header_entry_size) != header.program_header_entry_size) {
@@ -149,49 +158,73 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
             return NULL;
         }
         if(program_header.type != PT_LOAD || program_header.memsz == 0) continue;
-        if(program_header.vaddr < lowest_vaddr) lowest_vaddr = program_header.vaddr;
-        if(program_header.vaddr + program_header.memsz > highest_vaddr) highest_vaddr = program_header.vaddr + program_header.memsz;
+
+        elf64_addr_t aligned_vaddr = program_header.vaddr - program_header.vaddr % PMM_GRANULARITY;
+        elf64_xword_t aligned_size = MATH_CEIL(program_header.memsz + (program_header.vaddr % PMM_GRANULARITY), PMM_GRANULARITY);
+
+        for(size_t j = 0; j < region_count; j++) {
+            if(aligned_vaddr < regions[j]->aligned_vaddr + regions[j]->aligned_size && regions[j]->aligned_vaddr < aligned_vaddr + aligned_size) {
+                log(LOG_LEVEL_WARN, "elf: program headers (%u and %lu) are sharing a page", i, j);
+                return NULL;
+            }
+        }
+
+        if(aligned_vaddr < lowest_vaddr) lowest_vaddr = aligned_vaddr;
+        if(aligned_vaddr + aligned_size > highest_vaddr) highest_vaddr = aligned_vaddr + aligned_size;
 
         elf_region_t *region = heap_alloc(sizeof(elf_region_t));
-        region->vaddr = program_header.vaddr;
-        region->size = program_header.memsz;
+        region->real_vaddr = program_header.vaddr;
+        region->aligned_vaddr = aligned_vaddr;
+        region->aligned_size = aligned_size;
         region->read = (program_header.flags & VM_FLAG_READ) != 0;
         region->write = (program_header.flags & VM_FLAG_WRITE) != 0;
         region->execute = (program_header.flags & VM_FLAG_EXEC) != 0;
-
         regions = heap_realloc(regions, ++region_count * sizeof(elf_region_t *));
         regions[region_count - 1] = region;
+
+        if(program_header.type != PT_LOAD) continue;
+
+        region_load_t *load = heap_alloc(sizeof(region_load_t));
+        load->region_index = region_count - 1;
+        load->offset = program_header.offset;
+        load->size = program_header.filesz;
+        loads = heap_realloc(loads, ++load_count * sizeof(region_load_t *));
+        loads[load_count - 1] = load;
     }
 
     elf64_xword_t size = highest_vaddr - lowest_vaddr;
     elf64_xword_t page_count = MATH_DIV_CEIL(size, PMM_GRANULARITY);
     void *paddr = pmm_alloc(PMM_AREA_STANDARD, page_count);
-    for(elf64_half_t i = 0; i < header.program_header_entry_count; i++) {
-        elf64_program_header_t program_header;
-        if(file->ops->read(file, &program_header, header.program_header_offset + header.program_header_entry_size * i, header.program_header_entry_size) != header.program_header_entry_size) {
-            log(LOG_LEVEL_WARN, "elf: unable to read program header %u", i);
-            return NULL;
-        }
+    for(size_t i = 0; i < region_count; i++) {
+        void *addr = paddr + (regions[i]->aligned_vaddr - lowest_vaddr);
+        memset(addr, 0, regions[i]->aligned_size);
 
-        void *addr = paddr + (program_header.vaddr - lowest_vaddr);
-        memset(addr, 0, program_header.memsz);
-
-        elf64_addr_t aligned_vaddr = program_header.vaddr - program_header.vaddr % PMM_GRANULARITY;
-        elf64_xword_t aligned_size = (program_header.memsz + (program_header.vaddr % PMM_GRANULARITY) + PMM_GRANULARITY - 1) / PMM_GRANULARITY * PMM_GRANULARITY;
-        arch_vm_map(address_space, MATH_FLOOR((uintptr_t) addr, PMM_GRANULARITY), aligned_vaddr, aligned_size, program_header.flags & 0b111);
-
-        if(program_header.type != PT_LOAD) continue;
-        if(file->ops->read(file, addr, program_header.offset, program_header.filesz) != program_header.filesz) {
-            pmm_free(paddr, page_count);
-            log(LOG_LEVEL_WARN, "elf: unable to read program segment %u", i);
-            return NULL;
-        }
+        arch_vm_map(
+            address_space,
+            (uintptr_t) addr,
+            regions[i]->aligned_vaddr,
+            regions[i]->aligned_size,
+            (regions[i]->read ? VM_FLAG_READ : 0) | (regions[i]->write ? VM_FLAG_WRITE : 0) | (regions[i]->execute ? VM_FLAG_EXEC : 0)
+        );
     }
+
+    for(size_t i = 0; i < load_count; i++) {
+        void *addr = paddr + (regions[loads[i]->region_index]->real_vaddr - lowest_vaddr);
+
+        if(file->ops->read(file, addr, loads[i]->offset, loads[i]->size) != loads[i]->size) {
+            pmm_free(paddr, page_count);
+            log(LOG_LEVEL_WARN, "elf: unable to load program segment %u", loads[i]->region_index);
+            return NULL;
+        }
+
+        heap_free(loads[i]);
+    }
+    if(loads != NULL) heap_free(loads);
 
     elf_loaded_image_t *image = heap_alloc(sizeof(elf_loaded_image_t));
     image->paddr = (uintptr_t) paddr;
-    image->vaddr = lowest_vaddr;
-    image->size = size;
+    image->aligned_vaddr = lowest_vaddr;
+    image->aligned_size = size;
     image->entry = header.entry;
     image->regions = regions;
     image->count = region_count;

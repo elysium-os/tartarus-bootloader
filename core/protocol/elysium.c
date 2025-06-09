@@ -182,9 +182,9 @@ extern void protocol_elysium_handoff(uint64_t entry, ELYBOOT_PTR(void *) stack, 
         if(kernel->regions[i]->execute) flags |= ELYBOOT_KERNEL_SEGMENT_FLAG_EXECUTE;
 
         kernel_segments[i].flags = flags;
-        kernel_segments[i].vaddr = kernel->regions[i]->vaddr;
-        kernel_segments[i].paddr = kernel->paddr + (kernel->regions[i]->vaddr - kernel->vaddr);
-        kernel_segments[i].size = kernel->regions[i]->size;
+        kernel_segments[i].vaddr = kernel->regions[i]->aligned_vaddr;
+        kernel_segments[i].paddr = kernel->paddr + (kernel->regions[i]->aligned_vaddr - kernel->aligned_vaddr);
+        kernel_segments[i].size = kernel->regions[i]->aligned_size;
     }
 
     elyboot_framebuffer_t *framebuffer = heap_alloc(sizeof(elyboot_framebuffer_t));

@@ -139,16 +139,16 @@ extern void protocol_tartarus_handoff(uint64_t entry, void *stack, uint64_t boot
 
     tartarus_kernel_segment_t *kernel_segments = heap_alloc(sizeof(tartarus_kernel_segment_t) * kernel->count);
     for(size_t i = 0; i < kernel->count; i++) {
-        kernel_segments[i].vaddr = kernel->regions[i]->vaddr;
-        kernel_segments[i].size = kernel->regions[i]->size;
+        kernel_segments[i].vaddr = kernel->regions[i]->aligned_vaddr;
+        kernel_segments[i].size = kernel->regions[i]->aligned_size;
         kernel_segments[i].read = kernel->regions[i]->read;
         kernel_segments[i].write = kernel->regions[i]->write;
         kernel_segments[i].execute = kernel->regions[i]->execute;
     }
 
     boot_info->kernel.paddr = kernel->paddr;
-    boot_info->kernel.vaddr = kernel->vaddr;
-    boot_info->kernel.size = kernel->size;
+    boot_info->kernel.vaddr = kernel->aligned_vaddr;
+    boot_info->kernel.size = kernel->aligned_size;
     boot_info->kernel.segment_count = kernel->count;
     boot_info->kernel.segments = HHDM_CAST(tartarus_kernel_segment_t *, kernel_segments);
 
