@@ -104,7 +104,7 @@ extern void protocol_elysium_handoff(uint64_t entry, ELYBOOT_PTR(void *) stack, 
         uintptr_t start = page_cache_start + MATH_FLOOR((entry->base / PMM_GRANULARITY) * kernel_info->page_struct_size, PMM_GRANULARITY);
         uintptr_t end = page_cache_start + MATH_CEIL(((entry->base + entry->length) / PMM_GRANULARITY) * kernel_info->page_struct_size, PMM_GRANULARITY);
         for(page_cache_end = start; page_cache_end < end; page_cache_end += PMM_GRANULARITY) {
-            arch_vm_map(address_space, page_cache_end, (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, 1), PMM_GRANULARITY, VM_FLAG_READ | VM_FLAG_WRITE);
+            arch_vm_map(address_space, (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, 1), page_cache_end, PMM_GRANULARITY, VM_FLAG_READ | VM_FLAG_WRITE);
         }
     }
     uint64_t page_cache_size = page_cache_end - page_cache_start;
