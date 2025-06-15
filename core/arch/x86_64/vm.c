@@ -40,9 +40,12 @@ static void map_page(uint64_t *pml4, uint64_t paddr, uint64_t vaddr, pt_size_t s
             uint64_t *new_table = pmm_alloc(PMM_AREA_STANDARD, 1);
             memset(new_table, 0, PMM_GRANULARITY);
             current_table[indexes[i]] = ((uint64_t) (uintptr_t) new_table & PT_ADDRESS_MASK) | PT_PRESENT;
+            if(nx) current_table[indexes[i]] |= PT_NX;
+        } else {
+            if((current_table[indexes[i]] & PT_LARGE) != 0) panic("cannot remap over a non-4k page");
+            if(!nx) current_table[indexes[i]] &= ~PT_NX;
         }
         if(rw) current_table[indexes[i]] |= PT_RW;
-        if(!nx) current_table[indexes[i]] &= ~PT_NX;
         current_table = (uint64_t *) (uintptr_t) (current_table[indexes[i]] & PT_ADDRESS_MASK);
     }
     current_table[indexes[highest_index]] = (paddr & PT_ADDRESS_MASK) | PT_PRESENT;
@@ -64,6 +67,7 @@ void arch_vm_load_address_space(void *address_space) {
 void arch_vm_map(void *address_space, uint64_t paddr, uint64_t vaddr, uint64_t length, uint8_t flags) {
     if(paddr % VM_PAGE_GRANULARITY != 0 || vaddr % VM_PAGE_GRANULARITY != 0 || length % VM_PAGE_GRANULARITY != 0) panic("unaligned mapping (%#llx -> %#llx / %#llx)", paddr, vaddr, length);
     if((flags & VM_FLAG_READ) == 0) log(LOG_LEVEL_WARN, "mapping with no read permission");
+    if(!g_x86_64_cpu_nx_support && (flags & VM_FLAG_EXEC) == 0) log(LOG_LEVEL_WARN, "no-execute permissions not supported");
 
     uint64_t offset = 0;
     while(offset < length) {
