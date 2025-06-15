@@ -75,11 +75,20 @@ extern void protocol_elysium_handoff(uint64_t entry, ELYBOOT_PTR(void *) stack, 
 
         if(base + length > hhdm_size) hhdm_size = base + length;
 
+        log(LOG_LEVEL_DEBUG, "Mapping region %#llx -> %#llx [%#llx]", base, base + length, length);
+
         arch_vm_map(address_space, base, base, length, VM_FLAG_READ | VM_FLAG_WRITE | VM_FLAG_EXEC);
+
         arch_vm_map(address_space, base, HHDM_OFFSET + base, length, VM_FLAG_READ | VM_FLAG_WRITE);
     }
 
     // Map the framebuffer into the HHDM
+    log(LOG_LEVEL_DEBUG,
+        "Mapping framebuffer %#lx -> %#llx [%#llx]",
+        MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY),
+        (uint64_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY) + MATH_CEIL(fb->size, VM_PAGE_GRANULARITY),
+        (uint64_t) MATH_CEIL(fb->size, VM_PAGE_GRANULARITY));
+
     arch_vm_map(
         address_space,
         (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY),
@@ -101,10 +110,12 @@ extern void protocol_elysium_handoff(uint64_t entry, ELYBOOT_PTR(void *) stack, 
             default:                            continue;
         }
 
-        uintptr_t start = page_cache_start + MATH_FLOOR((entry->base / PMM_GRANULARITY) * kernel_info->page_struct_size, PMM_GRANULARITY);
-        uintptr_t end = page_cache_start + MATH_CEIL(((entry->base + entry->length) / PMM_GRANULARITY) * kernel_info->page_struct_size, PMM_GRANULARITY);
+        uint64_t start = page_cache_start + MATH_FLOOR((entry->base / PMM_GRANULARITY) * kernel_info->page_struct_size, PMM_GRANULARITY);
+        uint64_t end = page_cache_start + MATH_CEIL(((entry->base + entry->length) / PMM_GRANULARITY) * kernel_info->page_struct_size, PMM_GRANULARITY);
+        log(LOG_LEVEL_DEBUG, "Mapping page cache segment %#llx -> %#llx [%#llx]", start, end, end - start);
+
         for(page_cache_end = start; page_cache_end < end; page_cache_end += PMM_GRANULARITY) {
-            arch_vm_map(address_space, (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, 1), page_cache_end, PMM_GRANULARITY, VM_FLAG_READ | VM_FLAG_WRITE);
+            arch_vm_map(address_space, (uint64_t) pmm_alloc(PMM_AREA_STANDARD, 1), page_cache_end, PMM_GRANULARITY, VM_FLAG_READ | VM_FLAG_WRITE);
         }
     }
     uint64_t page_cache_size = page_cache_end - page_cache_start;
@@ -150,6 +161,7 @@ extern void protocol_elysium_handoff(uint64_t entry, ELYBOOT_PTR(void *) stack, 
         rsdp = arch_acpi_find_rsdp();
         if(rsdp == NULL) log(LOG_LEVEL_WARN, "Could not locate ACPI RSDP");
     }
+    log(LOG_LEVEL_INFO, "RSDP found at %#lx", (uintptr_t) rsdp);
 
     // Prepare SMP init
 #ifdef __PLATFORM_X86_64_UEFI
