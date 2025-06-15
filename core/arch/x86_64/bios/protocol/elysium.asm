@@ -46,7 +46,7 @@ entry_long:
 
     xor rbp, rbp
     xor rsp, rsp
-    mov esp, dword [stack]
+    mov rsp, qword [stack]
     push qword 0                                ; Push an invalid return address
 
     xor rbx, rbx
