@@ -2,4 +2,4 @@
 
 #include "dev/acpi.h"
 
-acpi_rsdp_t *arch_acpi_find_rsdp();
+void *arch_acpi_find_rsdp();
