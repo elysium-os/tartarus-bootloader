@@ -21,6 +21,7 @@ typedef enum : elyboot_uint_t {
 
     /// Bootloader allocated memory
     ELYBOOT_MM_TYPE_BOOTLOADER_RECLAIMABLE,
+    ELYBOOT_MM_TYPE_PAGE_CACHE,
 
     /// Memory designated by firmware
     ELYBOOT_MM_TYPE_RESERVED,

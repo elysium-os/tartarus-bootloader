@@ -115,7 +115,7 @@ extern void protocol_elysium_handoff(uint64_t entry, ELYBOOT_PTR(void *) stack, 
         log(LOG_LEVEL_DEBUG, "Mapping page cache segment %#llx -> %#llx [%#llx]", start, end, end - start);
 
         for(page_cache_end = start; page_cache_end < end; page_cache_end += PMM_GRANULARITY) {
-            arch_vm_map(address_space, (uint64_t) pmm_alloc(PMM_AREA_STANDARD, 1), page_cache_end, PMM_GRANULARITY, VM_FLAG_READ | VM_FLAG_WRITE);
+            arch_vm_map(address_space, (uint64_t) pmm_alloc_ext(PMM_AREA_STANDARD, 1, PMM_GRANULARITY, PMM_MAP_TYPE_PROTO_1), page_cache_end, PMM_GRANULARITY, VM_FLAG_READ | VM_FLAG_WRITE);
         }
     }
     uint64_t page_cache_size = page_cache_end - page_cache_start;
@@ -283,6 +283,7 @@ extern void protocol_elysium_handoff(uint64_t entry, ELYBOOT_PTR(void *) stack, 
             case PMM_MAP_TYPE_ACPI_RECLAIMABLE: type = ELYBOOT_MM_TYPE_ACPI_RECLAIMABLE; break;
             case PMM_MAP_TYPE_ACPI_NVS:         type = ELYBOOT_MM_TYPE_ACPI_NVS; break;
             case PMM_MAP_TYPE_BAD:              type = ELYBOOT_MM_TYPE_BAD; break;
+            case PMM_MAP_TYPE_PROTO_1:          type = ELYBOOT_MM_TYPE_PAGE_CACHE; break;
             case PMM_MAP_TYPE_RESERVED:
             default:                            type = ELYBOOT_MM_TYPE_RESERVED; break;
         }

@@ -24,7 +24,8 @@ typedef enum {
     PMM_MAP_TYPE_ACPI_RECLAIMABLE,
     PMM_MAP_TYPE_ACPI_NVS,
     PMM_MAP_TYPE_RESERVED,
-    PMM_MAP_TYPE_BAD
+    PMM_MAP_TYPE_BAD,
+    PMM_MAP_TYPE_PROTO_1
 } pmm_map_type_t;
 
 typedef struct {
