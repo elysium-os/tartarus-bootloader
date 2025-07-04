@@ -118,7 +118,7 @@ void pmm_map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force
 }
 
 void pmm_map_add(uint64_t base, uint64_t length, pmm_map_type_t type) {
-    if(type == PMM_MAP_TYPE_FREE || type == PMM_MAP_TYPE_ALLOCATED) {
+    if(type == PMM_MAP_TYPE_FREE || type == PMM_MAP_TYPE_ALLOCATED || type == PMM_MAP_TYPE_EFI_RECLAIMABLE || type == PMM_MAP_TYPE_ACPI_RECLAIMABLE) {
         uint64_t difference = MATH_CEIL(base, PMM_GRANULARITY) - base;
         if(difference >= length) return;
         base += difference;
