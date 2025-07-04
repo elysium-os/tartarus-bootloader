@@ -76,7 +76,6 @@
     if(protocol == NULL) panic("config provides no boot protocol");
 
     if(string_case_eq(protocol, "tartarus")) protocol_tartarus(config, kernel_node, fb);
-    if(string_case_eq(protocol, "elysium")) protocol_elysium(config, kernel_node, fb);
     if(string_case_eq(protocol, "linux")) protocol_linux(config, kernel_node, fb);
 
     panic("invalid boot protocol `%s`", protocol);

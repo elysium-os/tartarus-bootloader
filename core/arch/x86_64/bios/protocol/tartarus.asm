@@ -6,11 +6,15 @@ protocol_tartarus_handoff:
     mov dword [kernel_entry], eax
     mov eax, dword [esp + 8]
     mov dword [kernel_entry + 4], eax
+
     mov eax, dword [esp + 12]
     mov dword [stack], eax
     mov eax, dword [esp + 16]
-    mov dword [boot_info], eax
+    mov dword [stack + 4], eax
+
     mov eax, dword [esp + 20]
+    mov dword [boot_info], eax
+    mov eax, dword [esp + 24]
     mov dword [boot_info + 4], eax
 
     mov eax, cr4
@@ -42,7 +46,7 @@ entry_long:
 
     xor rbp, rbp
     xor rsp, rsp
-    mov esp, dword [stack]
+    mov rsp, qword [stack]
     push qword 0                                ; Push an invalid return address
 
     xor rbx, rbx
@@ -62,5 +66,5 @@ entry_long:
     jmp rax
 
 boot_info: dq 0
-stack: dd 0
+stack: dq 0
 kernel_entry: dq 0

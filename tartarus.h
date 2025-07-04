@@ -12,51 +12,84 @@
 #endif
 
 #ifdef __TARTARUS_NO_PTR
-#define __TARTARUS_PTR(TYPE) uint64_t
+#define __TARTARUS_PTR(TYPE) tartarus_vaddr_t
 #else
 #define __TARTARUS_PTR(TYPE) TYPE
 #endif
 
-typedef enum {
-    TARTARUS_MEMORY_MAP_TYPE_USABLE,
-    TARTARUS_MEMORY_MAP_TYPE_BOOT_RECLAIMABLE,
-    TARTARUS_MEMORY_MAP_TYPE_ACPI_RECLAIMABLE,
-    TARTARUS_MEMORY_MAP_TYPE_ACPI_NVS,
-    TARTARUS_MEMORY_MAP_TYPE_RESERVED,
-    TARTARUS_MEMORY_MAP_TYPE_BAD
-} tartarus_memory_map_type_t;
+#define TARTARUS_KERNEL_SEGMENT_FLAG_READ (1 << 0)
+#define TARTARUS_KERNEL_SEGMENT_FLAG_WRITE (1 << 1)
+#define TARTARUS_KERNEL_SEGMENT_FLAG_EXECUTE (1 << 2)
 
-typedef struct [[gnu::packed]] {
-    uint64_t base;
-    uint64_t length;
-    tartarus_memory_map_type_t type;
-} tartarus_memory_map_entry_t;
+typedef uint64_t tartarus_paddr_t;
+typedef uint64_t tartarus_vaddr_t;
+typedef uint64_t tartarus_size_t;
 
+/// Physical memory map entry type
+typedef enum : uint64_t {
+    /// Usable and free memory
+    TARTARUS_MM_TYPE_USABLE,
+
+    /// Usable memory used by the bootloader
+    TARTARUS_MM_TYPE_BOOTLOADER_RECLAIMABLE,
+
+    /// Usable memory used by EFI
+    TARTARUS_MM_TYPE_EFI_RECLAIMABLE,
+
+    /// Usable memory used by ACPI
+    TARTARUS_MM_TYPE_ACPI_RECLAIMABLE,
+
+    /// ACPI NVS memory
+    TARTARUS_MM_TYPE_ACPI_NVS,
+
+    /// Reserved by firmware
+    TARTARUS_MM_TYPE_RESERVED,
+
+    /// Memory marked as bad by firmware
+    TARTARUS_MM_TYPE_BAD
+} tartarus_mm_type_t;
+
+/// Physical memory map entry
 typedef struct [[gnu::packed]] {
-    bool initialization_failed;
-    __TARTARUS_PTR(uint64_t *) wake_on_write;
-#ifdef __X86_64
-    uint8_t lapic_id;
-#else
-#error Missing implementation
-#endif
+    tartarus_mm_type_t type;
+    tartarus_paddr_t base;
+    tartarus_size_t length;
+} tartarus_mm_entry_t;
+
+/// CPU initialization state
+typedef enum : uint8_t {
+    /// Tartarus failed to initialize the CPU
+    TARTARUS_CPU_STATE_FAIL,
+
+    /// The CPU successfully initialized and is parked
+    TARTARUS_CPU_STATE_OK
+} tartarus_cpu_state_t;
+
+/// Describes a CPU
+typedef struct [[gnu::packed]] {
+    tartarus_cpu_state_t init_state;
+    uint64_t sequential_id;
+    __TARTARUS_PTR(tartarus_vaddr_t *) wake_on_write;
 } tartarus_cpu_t;
 
+/// Module loaded by Tartarus
 typedef struct [[gnu::packed]] {
     __TARTARUS_PTR(char *) name;
-    uint64_t paddr;
-    uint64_t size;
+    tartarus_paddr_t paddr;
+    tartarus_size_t size;
 } tartarus_module_t;
 
+// Framebuffer initialized by Tartarus
 typedef struct [[gnu::packed]] {
-    __TARTARUS_PTR(void *) address;
-    uint64_t size;
+    __TARTARUS_PTR(void *) vaddr;
+    tartarus_paddr_t paddr;
+    tartarus_size_t size;
 
     uint32_t width;
     uint32_t height;
     uint32_t pitch;
-
     uint8_t bpp;
+
     struct [[gnu::packed]] {
         uint8_t red_position;
         uint8_t red_size;
@@ -67,43 +100,40 @@ typedef struct [[gnu::packed]] {
     } mask;
 } tartarus_framebuffer_t;
 
+/// Describes a loaded segment of the kernel
 typedef struct [[gnu::packed]] {
-    uint64_t vaddr;
-    uint64_t size;
-    bool read, write, execute;
+    tartarus_vaddr_t vaddr;
+    tartarus_paddr_t paddr;
+    tartarus_size_t size;
+    uint8_t flags;
 } tartarus_kernel_segment_t;
 
+/// Main boot information
 typedef struct [[gnu::packed]] {
     uint16_t version;
+    uint64_t boot_timestamp;
 
-    struct [[gnu::packed]] {
-        uint64_t vaddr;
-        uint64_t paddr;
-        uint64_t size;
-        uint64_t segment_count;
-        __TARTARUS_PTR(tartarus_kernel_segment_t *) segments;
-    } kernel;
-    struct [[gnu::packed]] {
-        uint64_t offset;
-        uint64_t size;
-    } hhdm;
-    struct [[gnu::packed]] {
-        uint16_t size;
-        __TARTARUS_PTR(tartarus_memory_map_entry_t *) entries;
-    } memory_map;
-    uint64_t acpi_rsdp_address;
+    tartarus_paddr_t acpi_rsdp_address;
+    tartarus_size_t entry_stack_size;
 
-    uint64_t framebuffer_count;
+    tartarus_vaddr_t hhdm_offset;
+    tartarus_size_t hhdm_size;
+
+    tartarus_size_t kernel_segment_count;
+    __TARTARUS_PTR(tartarus_kernel_segment_t *) kernel_segments;
+
+    tartarus_size_t mm_entry_count;
+    __TARTARUS_PTR(tartarus_mm_entry_t *) mm_entries;
+
+    tartarus_size_t framebuffer_count;
     __TARTARUS_PTR(tartarus_framebuffer_t *) framebuffers;
 
-    uint8_t bsp_index;
-    uint8_t cpu_count;
-    __TARTARUS_PTR(tartarus_cpu_t *) cpus;
-
-    uint16_t module_count;
+    tartarus_size_t module_count;
     __TARTARUS_PTR(tartarus_module_t *) modules;
 
-    uint64_t boot_timestamp;
+    tartarus_size_t bsp_index;
+    tartarus_size_t cpu_count;
+    __TARTARUS_PTR(tartarus_cpu_t *) cpus;
 } tartarus_boot_info_t;
 
 #endif
