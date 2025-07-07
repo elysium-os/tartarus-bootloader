@@ -13,4 +13,4 @@ typedef struct x86_64_smp_cpu {
     struct x86_64_smp_cpu *next;
 } x86_64_smp_cpu_t;
 
-x86_64_smp_cpu_t *x86_64_smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_init_page, void *address_space);
+x86_64_smp_cpu_t *x86_64_smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_init_page, void *address_space, uint64_t stack_pgcnt, uint64_t stack_offset);

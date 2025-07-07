@@ -28,7 +28,8 @@
 #define MAJOR_VERSION 3
 #define MINOR_VERSION 0
 
-#define STACK_PGCNT 16
+#define BSP_STACK_PGCNT 16
+#define AP_STACK_PGCNT 4
 
 #define HHDM_OFFSET 0xFFFF800000000000
 #define HHDM_CAST(TYPE, ADDRESS) ((__TARTARUS_PTR(TYPE))((uint64_t) (uintptr_t) (ADDRESS) + HHDM_OFFSET))
@@ -133,7 +134,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     }
 
     // Allocate stack
-    void *stack = pmm_alloc(PMM_AREA_STANDARD, STACK_PGCNT) + (STACK_PGCNT * PMM_GRANULARITY);
+    void *stack = pmm_alloc(PMM_AREA_STANDARD, BSP_STACK_PGCNT) + (BSP_STACK_PGCNT * PMM_GRANULARITY);
 
     // Find ACPI
     acpi_rsdp_t *rsdp = NULL;
@@ -158,7 +159,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
 
         acpi_sdt_header_t *madt = acpi_find_table(rsdp, "APIC");
         if(madt == NULL) panic("ACPI MADT table not present");
-        cpus = x86_64_smp_initialize_aps(madt, smp_reserved_page, address_space);
+        cpus = x86_64_smp_initialize_aps(madt, smp_reserved_page, address_space, AP_STACK_PGCNT, HHDM_OFFSET);
         log(LOG_LEVEL_INFO, "Initialized SMP");
     }
 #endif
@@ -196,7 +197,8 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     boot_info->version = ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION;
 
     boot_info->acpi_rsdp_address = (tartarus_paddr_t) (uintptr_t) rsdp;
-    boot_info->entry_stack_size = STACK_PGCNT * PMM_GRANULARITY;
+    boot_info->bsp_entry_stack_size = BSP_STACK_PGCNT * PMM_GRANULARITY;
+    boot_info->ap_entry_stack_size = AP_STACK_PGCNT * PMM_GRANULARITY;
     boot_info->hhdm_offset = HHDM_OFFSET;
     boot_info->hhdm_size = hhdm_size;
     boot_info->kernel_segment_count = kernel->count;

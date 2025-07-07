@@ -12,7 +12,6 @@
 #include "arch/x86_64/tsc.h"
 
 #define CYCLES_10MIL 10000000
-#define STACK_SIZE 4
 
 typedef struct [[gnu::packed]] {
     acpi_sdt_header_t sdt_header;
@@ -63,7 +62,7 @@ static uint8_t bsp_lapic_id() {
     return ebx >> 24;
 }
 
-x86_64_smp_cpu_t *x86_64_smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_init_page, void *address_space) {
+x86_64_smp_cpu_t *x86_64_smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_init_page, void *address_space, uint64_t stack_pgcnt, uint64_t stack_offset) {
     madt_t *madt = (madt_t *) madt_header;
     uint8_t bsp_id = bsp_lapic_id();
     if(bsp_id != x86_64_lapic_id()) panic("current LAPIC id does not match BSP id");
@@ -104,7 +103,7 @@ x86_64_smp_cpu_t *x86_64_smp_initialize_aps(acpi_sdt_header_t *madt_header, void
                 ap_info->init = 0;
                 ap_info->lapic_id = lapic_record->lapic_id;
                 ap_info->wait_on_address = (uintptr_t) cpu->wake_on_write;
-                ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, STACK_SIZE) + (PMM_GRANULARITY * STACK_SIZE);
+                ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, stack_pgcnt) + (PMM_GRANULARITY * stack_pgcnt) + stack_offset;
 
                 x86_64_lapic_ipi_init(lapic_record->lapic_id);
                 x86_64_tsc_block(CYCLES_10MIL);
@@ -116,9 +115,11 @@ x86_64_smp_cpu_t *x86_64_smp_initialize_aps(acpi_sdt_header_t *madt_header, void
                     asm volatile("lock xadd %0, %1" : "+r"(value) : "m"(ap_info->init) : "memory");
                     if(value > 0) goto success;
                 }
+
                 log(LOG_LEVEL_WARN, "CPU(lapic id %u) failed to initialize", lapic_record->lapic_id);
                 cpu->init_failed = true;
                 break;
+
             success:
                 log(LOG_LEVEL_INFO, "CPU(lapic id %u) initialized", lapic_record->lapic_id);
                 break;
