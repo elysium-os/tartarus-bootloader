@@ -124,18 +124,18 @@ if opt_platform:starts_with("x86_64") then
         })
 
         -- Nyu EFI
-        local nyu_efi = fab.dependency(
+        local pico_efi = fab.dependency(
             "nyu-efi",
             "https://github.com/PicoEFI/PicoEFI.git",
             "2690f9a67db1ad05315c044d7ba51d72b6a6ccc3"
         )
 
         table.extend(core_sources, sources(
-            path(nyu_efi.path, "x86_64/reloc.c"),
-            path(nyu_efi.path, "x86_64/entry.S")
+            path(pico_efi.path, "x86_64/reloc.c"),
+            path(pico_efi.path, "x86_64/entry.S")
         ))
-        table.insert(include_dirs, builtins.c.include_dir(path(nyu_efi.path, "inc")))
-        table.insert(ld_flags, "-T" .. fab.path_rel(path(nyu_efi.path, "x86_64/link_script.lds")))
+        table.insert(include_dirs, builtins.c.include_dir(path(pico_efi.path, "inc")))
+        table.insert(ld_flags, "-T" .. fab.path_rel(path(pico_efi.path, "x86_64/link_script.lds")))
     end
 
     if opt_platform == "x86_64-bios" then
