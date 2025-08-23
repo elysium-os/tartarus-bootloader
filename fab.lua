@@ -29,17 +29,17 @@ local objcopy_rule = fab.rule({
 local freestanding_c_headers = fab.dependency(
     "freestanding-c-headers",
     "https://codeberg.org/osdev/freestnd-c-hdrs.git",
-    "21b59ecd6ef67bb32f893da8288ce08a324d1986"
+    "4039f438fb1dc1064d8e98f70e1cf122f91b763b"
 )
 
 local cc_runtime = fab.dependency(
     "cc-runtime",
     "https://codeberg.org/osdev/cc-runtime.git",
-    "d5425655388977fa12ff9b903e554a20b20c426e"
+    "dae79833b57a01b9fd3e359ee31def69f5ae899b"
 )
 
 -- Common
-local core_sources = sources(fab.glob("core/**/*.c", "core/arch/**"), path(cc_runtime.path, "cc-runtime.c"))
+local core_sources = sources(fab.glob("core/**/*.c", "core/arch/**"), path(cc_runtime.path, "src/cc-runtime.c"))
 
 local include_dirs = { builtins.c.include_dir("."), builtins.c.include_dir("core") }
 
@@ -126,8 +126,8 @@ if opt_platform:starts_with("x86_64") then
         -- Nyu EFI
         local nyu_efi = fab.dependency(
             "nyu-efi",
-            "https://codeberg.org/osdev/nyu-efi.git",
-            "trunk"
+            "https://github.com/PicoEFI/PicoEFI.git",
+            "2690f9a67db1ad05315c044d7ba51d72b6a6ccc3"
         )
 
         table.extend(core_sources, sources(
