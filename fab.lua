@@ -28,13 +28,13 @@ local objcopy_rule = fab.rule({
 -- Common Dependencies
 local freestanding_c_headers = fab.dependency(
     "freestanding-c-headers",
-    "https://codeberg.org/osdev/freestnd-c-hdrs.git",
+    "https://github.com/osdev0/freestnd-c-hdrs.git",
     "4039f438fb1dc1064d8e98f70e1cf122f91b763b"
 )
 
 local cc_runtime = fab.dependency(
     "cc-runtime",
-    "https://codeberg.org/osdev/cc-runtime.git",
+    "https://github.com/osdev0/cc-runtime.git",
     "dae79833b57a01b9fd3e359ee31def69f5ae899b"
 )
 
