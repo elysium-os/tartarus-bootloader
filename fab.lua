@@ -123,9 +123,9 @@ if opt_platform:starts_with("x86_64") then
             "-pie"
         })
 
-        -- Nyu EFI
+        -- Pico EFI
         local pico_efi = fab.dependency(
-            "nyu-efi",
+            "pico-efi",
             "https://github.com/PicoEFI/PicoEFI.git",
             "2690f9a67db1ad05315c044d7ba51d72b6a6ccc3"
         )
