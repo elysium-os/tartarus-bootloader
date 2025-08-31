@@ -29,7 +29,7 @@ local objcopy_rule = fab.rule({
 local freestanding_c_headers = fab.dependency(
     "freestanding-c-headers",
     "https://github.com/osdev0/freestnd-c-hdrs.git",
-    "4039f438fb1dc1064d8e98f70e1cf122f91b763b"
+    "d33711241b46ecb8f2ad33927fcefdcb3ac0162e"
 )
 
 local cc_runtime = fab.dependency(
