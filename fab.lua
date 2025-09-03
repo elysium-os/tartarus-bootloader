@@ -126,8 +126,8 @@ if opt_platform:starts_with("x86_64") then
         -- Pico EFI
         local pico_efi = fab.dependency(
             "pico-efi",
-            "https://github.com/PicoEFI/PicoEFI.git",
-            "2690f9a67db1ad05315c044d7ba51d72b6a6ccc3"
+            "https://codeberg.org/PicoEFI/PicoEFI.git",
+            "4bd08c13f103de9efd7b215a3e337447f1e2ce37"
         )
 
         table.extend(core_sources, sources(
