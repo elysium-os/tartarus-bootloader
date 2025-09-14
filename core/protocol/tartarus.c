@@ -106,14 +106,18 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     // Load modules
     size_t module_count = config_key_count(config, "module", CONFIG_ENTRY_TYPE_STRING);
     tartarus_module_t *modules = heap_alloc(sizeof(tartarus_module_t) * module_count);
-    for(size_t i = 0; i < module_count; i++) {
+    for(size_t i = 0, j = 0; j < module_count; i++) {
         const char *module_path = config_find_string_at(config, "module", NULL, i);
-        if(module_path == NULL) continue;
+        if(module_path == NULL) {
+        skip_module:
+            modules = heap_realloc(modules, sizeof(tartarus_module_t) * --module_count);
+            continue;
+        }
 
         vfs_node_t *module_node = vfs_lookup(kernel_node->vfs, module_path);
         if(module_node == NULL) {
             log(LOG_LEVEL_WARN, "module %s not found", module_path);
-            continue;
+            goto skip_module;
         }
 
         size_t module_size = module_node->ops->get_size(module_node);
@@ -121,14 +125,15 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
         if(module_node->ops->read(module_node, module_addr, 0, module_size) != module_size) {
             pmm_free(module_addr, MATH_DIV_CEIL(module_size, PMM_GRANULARITY));
             log(LOG_LEVEL_WARN, "failed to load module %s", module_path);
-            continue;
+            goto skip_module;
         }
 
         char *module_name = heap_alloc(string_length(module_path) + 1);
         string_copy(module_name, module_path);
-        modules[i].name = HHDM_CAST(char *, module_name);
-        modules[i].paddr = (uint64_t) (uintptr_t) module_addr;
-        modules[i].size = module_size;
+        modules[j].name = HHDM_CAST(char *, module_name);
+        modules[j].paddr = (uint64_t) (uintptr_t) module_addr;
+        modules[j].size = module_size;
+        j += 1;
 
         log(LOG_LEVEL_INFO, "Loaded module %s at %#lx (of size %#lx)", module_path, (uintptr_t) module_addr, module_size);
     }
