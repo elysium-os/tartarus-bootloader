@@ -71,12 +71,15 @@
         }
     }
 
-    const char *protocol = config_find_string(config, "protocol", NULL);
-    log(LOG_LEVEL_INFO, "Using protocol: %s", protocol);
-    if(protocol == NULL) panic("config provides no boot protocol");
+    const char *protocol_name = config_find_string(config, "protocol", NULL);
+    if(protocol_name == NULL) panic("config provides no boot protocol");
 
-    if(string_case_eq(protocol, "tartarus")) protocol_tartarus(config, kernel_node, fb);
-    if(string_case_eq(protocol, "linux")) protocol_linux(config, kernel_node, fb);
+    log(LOG_LEVEL_INFO, "Using protocol: %s", protocol_name);
 
-    panic("invalid boot protocol `%s`", protocol);
+    protocol_t *protocol = protocol_match(protocol_name);
+    if(protocol == NULL) panic("invalid boot protocol");
+
+    protocol->entry(config, kernel_node, fb);
+
+    __builtin_unreachable();
 }
