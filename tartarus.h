@@ -1,3 +1,6 @@
+// Tartarus Bootloader API
+// Version 1.0.0
+
 #ifndef __TARTARUS_BOOTLOADER_HEADER
 #define __TARTARUS_BOOTLOADER_HEADER
 
