@@ -86,11 +86,14 @@ bits 64
     mov rdx, qword [off(boot_info.wait_on_address)]
 
     lock inc byte [off(boot_info.init)]                     ; Increment init to 1 to signal the BSP we are done
+
 .loop:
-    xor rax, rax
-    lock xadd qword [rdx], rax
+    mov rbx, qword [rdx]
+    test rbx, rbx
     jnz short .handoff
+    pause
     jmp short .loop
+
 .handoff:
     jmp qword [rdx]
 
