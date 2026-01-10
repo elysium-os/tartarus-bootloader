@@ -1,47 +1,59 @@
+local ld = require("ld")
+local c = require("lang_c")
+local nasm = require("lang_nasm")
+
 -- Options
-local opt_platform = fab.option("platform", { "x86_64-uefi", "x86_64-bios" }) or "x86_64-uefi"
-local opt_build_type = fab.option("buildtype", { "development", "production" }) or "development"
+local options = {
+    platform = fab.option("platform", { "x86_64-uefi", "x86_64-bios" }) or "x86_64-uefi",
+    build_type = fab.option("buildtype", { "development", "production" }) or "development"
+}
 
 -- Tools
-local cc = builtins.c.get_compiler("clang")
+local cc = c.get_clang()
 if cc == nil then
     error("No viable C compiler found")
 end
 
-local linker = builtins.get_linker()
+local linker = ld.get_linker()
 if linker == nil then
     error("No viable linker found")
 end
 
 -- Rules
-local objcopy = builtins.resolve_executable({ "llvm-objcopy", "objcopy" })
-if objcopy == nil then
-    error("no viable objcopy found")
+local objcopy_path = fab.which("llvm-objcopy") or fab.which("objcopy")
+if objcopy_path == nil then
+    error("No viable objcopy found")
 end
 
-local objcopy_rule = fab.rule({
-    name = "objcopy_to_bin",
-    command = { objcopy, "-O", "binary", "@IN@", "@OUT@" },
-    description = "Objcopying @IN@ to a binary @OUT@",
-})
+local objcopy_rule = fab.def_rule(
+    "objcopy_to_bin",
+    objcopy_path .. " -O binary @IN@ @OUT@",
+    "Objcopying @IN@ to a binary @OUT@"
+)
 
 -- Common Dependencies
-local freestanding_c_headers = fab.dependency(
+local freestanding_c_headers = fab.git(
     "freestanding-c-headers",
     "https://github.com/osdev0/freestnd-c-hdrs.git",
     "d33711241b46ecb8f2ad33927fcefdcb3ac0162e"
 )
 
-local cc_runtime = fab.dependency(
+local cc_runtime = fab.git(
     "cc-runtime",
     "https://github.com/osdev0/cc-runtime.git",
     "dae79833b57a01b9fd3e359ee31def69f5ae899b"
 )
 
 -- Common
-local core_sources = sources(fab.glob("core/**/*.c", "core/arch/**"), path(cc_runtime.path, "src/cc-runtime.c"))
+local core_sources = sources(
+    fab.glob("core/**/*.c", "!core/arch/**"),
+    path(cc_runtime.path, "src/cc-runtime.c")
+)
 
-local include_dirs = { builtins.c.include_dir("."), builtins.c.include_dir("core") }
+local include_dirs = {
+    c.include_dir("."),
+    c.include_dir("core")
+}
 
 local cflags = {
     "-std=gnu2x",
@@ -63,19 +75,19 @@ local cflags = {
 local defines = {}
 
 -- Build Types
-if opt_build_type == "development" then
+if options.build_type == "development" then
     table.insert(cflags, "-O3")
     table.insert(defines, "__ENV_DEVELOPMENT")
 end
 
-if opt_build_type == "production" then
+if options.build_type == "production" then
     table.extend(cflags, { "-O0", "-g" })
     table.insert(defines, "__ENV_PRODUCTION")
 end
 
 -- Platforms
-if opt_platform:starts_with("x86_64") then
-    table.insert(include_dirs, builtins.c.include_dir(path(freestanding_c_headers.path, "x86_64/include")))
+if options.platform:starts_with("x86_64") then
+    table.insert(include_dirs, c.include_dir(path(freestanding_c_headers.path, "x86_64/include")))
 
     table.extend(cflags, {
         "-mabi=sysv",
@@ -94,13 +106,14 @@ if opt_platform:starts_with("x86_64") then
         "-zmax-page-size=0x1000"
     }
 
-    local asmc = builtins.nasm.get_assembler()
+    local asmc = nasm.get_nasm()
     if asmc == nil then
         error("No NASM assembler found")
     end
 
-    if opt_platform == "x86_64-uefi" then
-        table.extend(core_sources, sources(fab.glob("core/arch/x86_64/**/*.{c,asm}", "core/arch/x86_64/bios/**")))
+    if options.platform == "x86_64-uefi" then
+        table.extend(core_sources,
+            sources(fab.glob("core/arch/x86_64/**/*.{c,asm}", "!core/arch/x86_64/bios/**")))
 
         table.extend(cflags, {
             "--target=x86_64-none-elf",
@@ -124,7 +137,7 @@ if opt_platform:starts_with("x86_64") then
         })
 
         -- Pico EFI
-        local pico_efi = fab.dependency(
+        local pico_efi = fab.git(
             "pico-efi",
             "https://codeberg.org/PicoEFI/PicoEFI.git",
             "4bd08c13f103de9efd7b215a3e337447f1e2ce37"
@@ -134,12 +147,13 @@ if opt_platform:starts_with("x86_64") then
             path(pico_efi.path, "x86_64/reloc.c"),
             path(pico_efi.path, "x86_64/entry.S")
         ))
-        table.insert(include_dirs, builtins.c.include_dir(path(pico_efi.path, "inc")))
+        table.insert(include_dirs, c.include_dir(path(pico_efi.path, "inc")))
         table.insert(ld_flags, "-T" .. fab.path_rel(path(pico_efi.path, "x86_64/link_script.lds")))
     end
 
-    if opt_platform == "x86_64-bios" then
-        table.extend(core_sources, sources(fab.glob("core/arch/x86_64/**/*.{c,asm}", "core/arch/x86_64/uefi/**")))
+    if options.platform == "x86_64-bios" then
+        table.extend(core_sources,
+            sources(fab.glob("core/arch/x86_64/**/*.{c,asm}", "!core/arch/x86_64/uefi/**")))
 
         table.extend(cflags, {
             "--target=x86_64-none-elf",
@@ -166,7 +180,7 @@ if opt_platform:starts_with("x86_64") then
         table.insert(asm_flags, "-D" .. define)
     end
 
-    local core_objects = builtins.generate(core_sources, {
+    local core_objects = generate(core_sources, {
         S = function(sources) return cc:generate(sources, cflags, include_dirs) end,
         c = function(sources) return cc:generate(sources, cflags, include_dirs) end,
         asm = function(sources) return asmc:generate(sources, asm_flags) end
@@ -175,25 +189,23 @@ if opt_platform:starts_with("x86_64") then
     local core = linker:link("tartarus.elf", core_objects, ld_flags)
     local binary = objcopy_rule:build("tartarus.bin", { core }, {})
 
-    if opt_platform == "x86_64-bios" then
-        local bios_boot = asmc:assemble("x86_64-bios.bin", fab.source("boot/x86_64-bios.asm"), { "-f", "bin" })
+    local install = {}
+    if options.platform == "x86_64-bios" then
+        local bios_boot = asmc:assemble("x86_64-bios.bin", fab.def_source("boot/x86_64-bios.asm"), { "-f", "bin" })
 
-        bios_boot:install("share/tartarus/x86_64-bios.bin")
-        binary:install("share/tartarus/tartarus.sys")
+        install["share/tartarus/x86_64-bios.bin"] = bios_boot
+        install["share/tartarus/tartarus.sys"] = binary
     end
 
-    if opt_platform == "x86_64-uefi" then
-        local postprocess = fab.get_executable(path(fab.project_root(), "uefi_postprocess.sh"))
-        if postprocess == nil then
-            error("uefi_postprocess.sh not found")
-        end
+    if options.platform == "x86_64-uefi" then
+        local efi = fab.def_rule(
+            "postprocess_efi",
+            fab.path_rel("uefi_postprocess.sh") .. " @IN@ @OUT@",
+            "Postprocessing @IN@ to @OUT@"
+        ):build("tartarus.efi", { binary }, {})
 
-        local efi = fab.rule({
-            name = "postprocess_efi",
-            command = { postprocess, "@IN@", "@OUT@" },
-            description = "Postprocessing @IN@ to @OUT@"
-        }):build("tartarus.efi", { binary }, {})
-
-        efi:install("share/tartarus/tartarus.efi")
+        install["share/tartarus/tartarus.efi"] = efi
     end
+
+    return { install = install }
 end
