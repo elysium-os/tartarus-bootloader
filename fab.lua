@@ -35,7 +35,7 @@ local objcopy_rule = fab.def_rule(
 local freestanding_c_headers = fab.git(
     "freestanding-c-headers",
     "https://github.com/osdev0/freestnd-c-hdrs.git",
-    "d33711241b46ecb8f2ad33927fcefdcb3ac0162e"
+    "5e11c3da645d8f203e93dc23703b14a15c5b7afc"
 )
 
 local cc_runtime = fab.git(
@@ -140,7 +140,7 @@ if options.platform:starts_with("x86_64") then
         local pico_efi = fab.git(
             "pico-efi",
             "https://codeberg.org/PicoEFI/PicoEFI.git",
-            "4bd08c13f103de9efd7b215a3e337447f1e2ce37"
+            "8b79fdaa72ee548a8ea24e3dc4d87bf281312865"
         )
 
         table.extend(core_sources, sources(
