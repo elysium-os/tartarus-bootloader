@@ -111,6 +111,8 @@ if options.platform:starts_with("x86_64") then
         error("No NASM assembler found")
     end
 
+    local linker_script = nil
+
     if options.platform == "x86_64-uefi" then
         table.extend(core_sources,
             sources(fab.glob("core/arch/x86_64/**/*.{c,asm}", "!core/arch/x86_64/bios/**")))
@@ -148,7 +150,8 @@ if options.platform:starts_with("x86_64") then
             path(pico_efi.path, "x86_64/entry.S")
         ))
         table.insert(include_dirs, c.include_dir(path(pico_efi.path, "inc")))
-        table.insert(ld_flags, "-T" .. fab.path_rel(path(pico_efi.path, "x86_64/link_script.lds")))
+
+        linker_script = fab.def_source(path(pico_efi.path, "x86_64/link_script.lds"))
     end
 
     if options.platform == "x86_64-bios" then
@@ -171,9 +174,12 @@ if options.platform:starts_with("x86_64") then
 
         table.extend(ld_flags, {
             "-melf_i386",
-            "-T" .. fab.path_rel("core/support/link.x86_64.bios.ld")
         })
+
+        linker_script = fab.def_source("core/support/link.x86_64.bios.ld")
     end
+
+    assert(linker_script ~= nil)
 
     for _, define in ipairs(defines) do
         table.insert(cflags, "-D" .. define)
@@ -186,7 +192,7 @@ if options.platform:starts_with("x86_64") then
         asm = function(sources) return asmc:generate(sources, asm_flags) end
     })
 
-    local core = linker:link("tartarus.elf", core_objects, ld_flags)
+    local core = linker:link("tartarus.elf", core_objects, ld_flags, linker_script)
     local binary = objcopy_rule:build("tartarus.bin", { core }, {})
 
     local install = {}
