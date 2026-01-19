@@ -3,12 +3,12 @@
 #include "core.h"
 #include "memory/pmm.h"
 
+#include "arch/uefi/uefi.h"
 #include "arch/x86_64/cpu.h"
-#include "arch/x86_64/uefi/uefi.h"
 
 #define PAGES_RESERVED_FOR_UEFI 64
 
-#ifdef __ENV_DEVELOPMENT
+#ifdef __BUILD_DEBUG
 static void qemu_debug_log(char ch) {
     asm volatile("outb %0, %1" : : "a"(ch), "Nd"(0xE9));
 }
@@ -16,18 +16,15 @@ static void qemu_debug_log(char ch) {
 static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qemu_debug_log};
 #endif
 
-EFI_SYSTEM_TABLE *g_x86_64_uefi_efi_system_table;
-EFI_HANDLE g_x86_64_uefi_efi_image_handle;
-
 [[noreturn]] EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table) {
-    g_x86_64_uefi_efi_system_table = system_table;
-    g_x86_64_uefi_efi_image_handle = image_handle;
+    g_uefi_system_table = system_table;
+    g_uefi_image_handle = image_handle;
 
-#ifdef __ENV_DEVELOPMENT
+#ifdef __BUILD_DEBUG
     qemu_debug_log('\n');
     log_sink_add(&g_qemu_debug_sink);
 #endif
-    log_sink_add(&g_uefi_sink);
+    log_sink_add(&g_uefi_log_sink);
 
     x86_64_cpu_init();
 

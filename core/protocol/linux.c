@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #ifdef __PLATFORM_X86_64_UEFI
-#include "arch/x86_64/uefi/uefi.h"
+#include "arch/uefi/uefi.h"
 #endif
 
 #define LINUX_IMAGE_SIGNATURE 0x53726448
@@ -393,7 +393,7 @@ static_assert(sizeof(boot_params_t) == PMM_GRANULARITY);
 
     // Platform exit
 #ifdef __PLATFORM_X86_64_UEFI
-    x86_64_uefi_efi_bootservices_exit();
+    uefi_bootservices_exit();
 #endif
 
     // Load memory map
@@ -402,7 +402,7 @@ static_assert(sizeof(boot_params_t) == PMM_GRANULARITY);
         switch(g_pmm_map[i].type) {
             case PMM_MAP_TYPE_RESERVED:
             case PMM_MAP_TYPE_ALLOCATED:
-            case PMM_MAP_TYPE_EFI_RECLAIMABLE:       e820_type = LINUX_E820_TYPE_RESERVED; break;
+            case PMM_MAP_TYPE_EFI_RECLAIMABLE:  e820_type = LINUX_E820_TYPE_RESERVED; break;
             case PMM_MAP_TYPE_FREE:             e820_type = LINUX_E820_TYPE_USABLE; break;
             case PMM_MAP_TYPE_ACPI_RECLAIMABLE: e820_type = LINUX_E820_TYPE_ACPI_RECLAIMABLE; break;
             case PMM_MAP_TYPE_ACPI_NVS:         e820_type = LINUX_E820_TYPE_ACPI_NVS; break;

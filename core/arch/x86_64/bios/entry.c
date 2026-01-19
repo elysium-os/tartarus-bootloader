@@ -26,7 +26,7 @@ typedef enum {
 extern nullptr_t ld_tartarus_start[];
 extern nullptr_t ld_tartarus_end[];
 
-#ifdef __ENV_DEVELOPMENT
+#ifdef __BUILD_DEBUG
 static void qemu_debug_log(char ch) {
     asm volatile("outb %0, %1" : : "a"(ch), "Nd"(0xE9));
 }
@@ -35,7 +35,7 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
 #endif
 
 [[noreturn]] void x86_64_bios_entry() {
-#ifdef __ENV_DEVELOPMENT
+#ifdef __BUILD_DEBUG
     qemu_debug_log('\n');
     log_sink_add(&g_qemu_debug_sink);
 #endif

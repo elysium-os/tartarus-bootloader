@@ -5,7 +5,7 @@ local nasm = require("lang_nasm")
 -- Options
 local options = {
     platform = fab.option("platform", { "x86_64-uefi", "x86_64-bios" }) or "x86_64-uefi",
-    build_type = fab.option("buildtype", { "development", "production" }) or "development"
+    build_type = fab.option("buildtype", { "debug", "release" }) or "release"
 }
 
 -- Tools
@@ -75,26 +75,26 @@ local cflags = {
 local defines = {}
 
 -- Build Types
-if options.build_type == "development" then
+if options.build_type == "debug" then
     table.insert(cflags, "-O3")
-    table.insert(defines, "__ENV_DEVELOPMENT")
+    table.insert(defines, "__BUILD_DEBUG")
 end
 
-if options.build_type == "production" then
+if options.build_type == "release" then
     table.extend(cflags, { "-O0", "-g" })
-    table.insert(defines, "__ENV_PRODUCTION")
+    table.insert(defines, "__BUILD_RELEASE")
 end
 
 -- Platforms
 if options.platform:starts_with("x86_64") then
+    table.insert(defines, "__ARCH_X86_64")
+
     table.insert(include_dirs, c.include_dir(path(freestanding_c_headers.path, "x86_64/include")))
 
     table.extend(cflags, {
         "-mabi=sysv",
         "-mgeneral-regs-only",
     })
-
-    table.insert(defines, "__ARCH_X86_64")
 
     local asm_flags = {
         "-Werror"
@@ -115,7 +115,7 @@ if options.platform:starts_with("x86_64") then
 
     if options.platform == "x86_64-uefi" then
         table.extend(core_sources,
-            sources(fab.glob("core/arch/x86_64/**/*.{c,asm}", "!core/arch/x86_64/bios/**")))
+            sources(fab.glob("core/arch/{x86_64,uefi}/**/*.{c,asm}", "!core/arch/x86_64/bios/**")))
 
         table.extend(cflags, {
             "--target=x86_64-none-elf",

@@ -22,7 +22,7 @@
 #endif
 
 #ifdef __PLATFORM_X86_64_UEFI
-#include "arch/x86_64/uefi/uefi.h"
+#include "arch/uefi/uefi.h"
 #endif
 
 #define MAJOR_VERSION 3
@@ -152,7 +152,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     // Prepare SMP init
 #ifdef __PLATFORM_X86_64_UEFI
     log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
-    x86_64_uefi_efi_bootservices_exit();
+    uefi_bootservices_exit();
 #endif
 
     // Initialize SMP

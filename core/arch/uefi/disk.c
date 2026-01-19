@@ -7,7 +7,7 @@
 #include "memory/heap.h"
 #include "memory/pmm.h"
 
-#include "arch/x86_64/uefi/uefi.h"
+#include "arch/uefi/uefi.h"
 
 #define UEFI_DISK(DISK) (CONTAINER_OF((DISK), uefi_disk_t, common))
 
@@ -20,16 +20,16 @@ void arch_disk_initialize() {
     UINTN buffer_size = 0;
     EFI_HANDLE *buffer = NULL;
     EFI_GUID guid = EFI_BLOCK_IO_PROTOCOL_GUID;
-    EFI_STATUS status = g_x86_64_uefi_efi_system_table->BootServices->LocateHandle(ByProtocol, &guid, NULL, &buffer_size, buffer);
+    EFI_STATUS status = g_uefi_system_table->BootServices->LocateHandle(ByProtocol, &guid, NULL, &buffer_size, buffer);
     if(status == EFI_BUFFER_TOO_SMALL) {
         buffer = heap_alloc(buffer_size);
-        status = g_x86_64_uefi_efi_system_table->BootServices->LocateHandle(ByProtocol, &guid, NULL, &buffer_size, buffer);
+        status = g_uefi_system_table->BootServices->LocateHandle(ByProtocol, &guid, NULL, &buffer_size, buffer);
     }
     if(EFI_ERROR(status)) panic("failed to retrieve block I/O handles");
 
     for(UINTN i = 0; i < buffer_size; i += sizeof(EFI_HANDLE)) {
         EFI_BLOCK_IO *io;
-        status = g_x86_64_uefi_efi_system_table->BootServices->OpenProtocol(*buffer++, &guid, (void **) &io, g_x86_64_uefi_efi_image_handle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+        status = g_uefi_system_table->BootServices->OpenProtocol(*buffer++, &guid, (void **) &io, g_uefi_image_handle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
         if(EFI_ERROR(status) || !io || io->Media->LastBlock == 0 || io->Media->LogicalPartition) continue;
 
         io->Media->WriteCaching = false;

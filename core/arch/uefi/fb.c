@@ -3,13 +3,13 @@
 #include "common/panic.h"
 #include "memory/heap.h"
 
-#include "arch/x86_64/uefi/uefi.h"
+#include "arch/uefi/uefi.h"
 
 fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict_rgb) {
     EFI_STATUS status;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-    status = g_x86_64_uefi_efi_system_table->BootServices->LocateProtocol(&gop_guid, NULL, (void **) &gop);
+    status = g_uefi_system_table->BootServices->LocateProtocol(&gop_guid, NULL, (void **) &gop);
     if(EFI_ERROR(status)) return NULL;
 
     bool closest_found = false;

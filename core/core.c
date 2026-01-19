@@ -15,8 +15,8 @@
 #define VERSION_MAJOR 4
 #define VERSION_MINOR 0
 
-#ifdef __ENV_DEVELOPMENT
-#define VERSION_TAG " (development)"
+#ifdef __BUILD_DEBUG
+#define VERSION_TAG " (debug)"
 #else
 #define VERSION_TAG ""
 #endif
