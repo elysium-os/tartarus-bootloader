@@ -1,7 +1,7 @@
-global protocol_tartarus_handoff
+global x86_64_protocol_tartarus_handoff
 
 bits 32
-protocol_tartarus_handoff:
+x86_64_protocol_tartarus_handoff:
     mov eax, dword [esp + 4]
     mov dword [kernel_entry], eax
     mov eax, dword [esp + 8]
@@ -13,9 +13,17 @@ protocol_tartarus_handoff:
     mov dword [stack + 4], eax
 
     mov eax, dword [esp + 20]
+    mov dword [top_page_table], eax
+
+    mov eax, dword [esp + 28]
     mov dword [boot_info], eax
-    mov eax, dword [esp + 24]
+    mov eax, dword [esp + 32]
     mov dword [boot_info + 4], eax
+
+    mov eax, dword [esp + 36]
+    mov dword [version], eax
+    mov eax, dword [esp + 40]
+    mov dword [version + 4], eax
 
     mov eax, cr4
     or eax, 1 << 5                              ; Enable PAE bit
@@ -26,6 +34,9 @@ protocol_tartarus_handoff:
     or eax, 1 << 8                              ; Set long mode bit
     wrmsr                                       ; Enable long mode
 
+    mov eax, dword [top_page_table]
+    mov cr3, eax                                ; Load page tables
+
     mov eax, cr0
     or eax, (1 << 31) | (1 << 16)               ; Set paging bit & write protect bits
     mov cr0, eax                                ; Enable paging
@@ -35,14 +46,17 @@ protocol_tartarus_handoff:
 bits 64
 entry_long:
     mov rax, 0x30                               ; Reset segments
-    mov ds, rax
     mov ss, rax
+
+    xor rax, rax
+    mov ds, rax
     mov es, rax
     mov fs, rax
     mov gs, rax
 
     mov rax, qword [kernel_entry]
     mov rdi, qword [boot_info]
+    mov rsi, qword [version]
 
     xor rbp, rbp
     xor rsp, rsp
@@ -52,7 +66,6 @@ entry_long:
     xor rbx, rbx
     xor rcx, rcx
     xor rdx, rdx
-    xor rsi, rsi
     xor r8, r8
     xor r9, r9
     xor r10, r10
@@ -66,5 +79,7 @@ entry_long:
     jmp rax
 
 boot_info: dq 0
+version: dq 0
+top_page_table: dw 0
 stack: dq 0
 kernel_entry: dq 0

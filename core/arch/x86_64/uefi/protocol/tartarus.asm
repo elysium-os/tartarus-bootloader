@@ -1,22 +1,24 @@
-global protocol_tartarus_handoff
+global x86_64_protocol_tartarus_handoff
 
 bits 64
-protocol_tartarus_handoff:
+x86_64_protocol_tartarus_handoff:
+    mov cr3, rdx                                ; Load page tables
+
     mov rax, cr0
     or rax, (1 << 16)                           ; Set write protect bit
     mov cr0, rax
 
-    mov rax, qword rdi                          ; Move entry_address into rax
-    mov rdi, rdx                                ; Move boot_info into rdi
-
     xor rbp, rbp
-    mov rsp, qword rsi                          ; Move stack into rsi
+    mov rsp, rsi                                ; Load stack from rsi
     push qword 0                                ; Push an invalid return address
+
+    mov rax, rdi                                ; Move entry_address into rax
+    mov rdi, rcx                                ; Move boot_info into rdi
+    mov rsi, r8                                 ; Move version into rsi
 
     xor rbx, rbx
     xor rcx, rcx
     xor rdx, rdx
-    xor rsi, rsi
     xor r8, r8
     xor r9, r9
     xor r10, r10

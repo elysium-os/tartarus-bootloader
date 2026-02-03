@@ -96,7 +96,3 @@ void arch_ptm_map(ptm_address_space_t *as, uint64_t paddr, uint64_t vaddr, uint6
         offset += page_size;
     }
 }
-
-void arch_ptm_load_address_space(ptm_address_space_t *as) {
-    asm volatile("mov %0, %%cr3" : : "r"(as->top_page_table) : "memory");
-}

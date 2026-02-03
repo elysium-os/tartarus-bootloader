@@ -39,4 +39,3 @@ typedef struct {
 
 ptm_address_space_t *arch_ptm_create_address_space();
 void arch_ptm_map(ptm_address_space_t *address_space, uint64_t paddr, uint64_t vaddr, uint64_t length, uint8_t flags);
-void arch_ptm_load_address_space(ptm_address_space_t *address_space);

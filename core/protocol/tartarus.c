@@ -15,13 +15,14 @@
 #include "memory/pmm.h"
 
 #include <stddef.h>
+#include <stdint.h>
 #include <tartarus.h>
 
-#ifdef __PLATFORM_X86_64_UEFI
+#ifdef __UEFI
 #include "arch/uefi/uefi.h"
 #endif
 
-#define MAJOR_VERSION 3
+#define MAJOR_VERSION 1
 #define MINOR_VERSION 0
 
 #define BSP_STACK_PGCNT 16
@@ -30,7 +31,7 @@
 #define HHDM_OFFSET 0xFFFF800000000000
 #define HHDM_CAST(TYPE, ADDRESS) ((__TARTARUS_PTR(TYPE))((uint64_t) (uintptr_t) (ADDRESS) + HHDM_OFFSET))
 
-extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t boot_info);
+[[noreturn]] extern void x86_64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t top_page_table, uint64_t boot_info, uint16_t version);
 
 [[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel_node, fb_t *fb) {
     log(LOG_LEVEL_INFO, "Tartarus Protocol Version %u.%u", MAJOR_VERSION, MINOR_VERSION);
@@ -50,8 +51,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
             case PMM_MAP_TYPE_FREE:
             case PMM_MAP_TYPE_ALLOCATED:
             case PMM_MAP_TYPE_EFI_RECLAIMABLE:
-            case PMM_MAP_TYPE_ACPI_RECLAIMABLE:
-            case PMM_MAP_TYPE_RESERVED:         break;
+            case PMM_MAP_TYPE_ACPI_RECLAIMABLE: break;
             default:                            continue;
         }
 
@@ -182,8 +182,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     framebuffer->mask.blue_size = fb->mask_blue_size;
 
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
-    boot_info->version = ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION;
-
     boot_info->acpi_rsdp_address = (tartarus_paddr_t) (uintptr_t) rsdp;
     boot_info->bsp_entry_stack_size = BSP_STACK_PGCNT * PMM_GRANULARITY;
     boot_info->ap_entry_stack_size = AP_STACK_PGCNT * PMM_GRANULARITY;
@@ -250,13 +248,14 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     boot_info->mm_entries = HHDM_CAST(tartarus_mm_entry_t *, memory_map_entries);
     boot_info->boot_timestamp = arch_time();
 
-    // Load the address space
-#if __ARCH_X86_64
-    arch_ptm_load_address_space(address_space);
-#endif
-
     // Handoff
     log(LOG_LEVEL_INFO, "Kernel handoff");
-    protocol_tartarus_handoff(kernel->entry, HHDM_CAST(void *, stack), HHDM_CAST(uint64_t, boot_info));
+    x86_64_protocol_tartarus_handoff(
+        kernel->entry,
+        HHDM_CAST(void *, stack),
+        (uintptr_t) address_space->top_page_table,
+        HHDM_CAST(uint64_t, boot_info),
+        ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION
+    );
     __builtin_unreachable();
 }

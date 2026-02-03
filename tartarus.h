@@ -24,6 +24,9 @@
 #define TARTARUS_KERNEL_SEGMENT_FLAG_WRITE (1 << 1)
 #define TARTARUS_KERNEL_SEGMENT_FLAG_EXECUTE (1 << 2)
 
+#define TARTARUS_CPU_FLAG_IS_BSP (1 << 0)
+#define TARTARUS_CPU_FLAG_BOOT_OK (1 << 1)
+
 typedef uint64_t tartarus_paddr_t;
 typedef uint64_t tartarus_vaddr_t;
 typedef uint64_t tartarus_size_t;
@@ -59,20 +62,10 @@ typedef struct [[gnu::packed]] {
     tartarus_size_t length;
 } tartarus_mm_entry_t;
 
-/// CPU initialization state
-typedef enum : uint8_t {
-    /// Tartarus failed to initialize the CPU
-    TARTARUS_CPU_STATE_FAIL,
-
-    /// The CPU successfully initialized and is parked
-    TARTARUS_CPU_STATE_OK
-} tartarus_cpu_state_t;
-
 /// Describes a CPU
 typedef struct [[gnu::packed]] {
-    tartarus_cpu_state_t init_state;
-    uint64_t sequential_id;
-    __TARTARUS_PTR(tartarus_vaddr_t *) wake_on_write;
+    uint8_t flags;
+    __TARTARUS_PTR(tartarus_vaddr_t *) park_address;
 } tartarus_cpu_t;
 
 /// Module loaded by Tartarus
@@ -113,7 +106,6 @@ typedef struct [[gnu::packed]] {
 
 /// Main boot information
 typedef struct [[gnu::packed]] {
-    uint16_t version;
     uint64_t boot_timestamp;
 
     tartarus_paddr_t acpi_rsdp_address;
@@ -135,7 +127,6 @@ typedef struct [[gnu::packed]] {
     tartarus_size_t module_count;
     __TARTARUS_PTR(tartarus_module_t *) modules;
 
-    tartarus_size_t bsp_index;
     tartarus_size_t cpu_count;
     __TARTARUS_PTR(tartarus_cpu_t *) cpus;
 } tartarus_boot_info_t;
