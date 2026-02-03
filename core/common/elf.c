@@ -117,6 +117,7 @@ static bool validate_elf(elf64_header_t *header) {
         log(LOG_LEVEL_ERROR, "elf: unsupported version");
         return false;
     }
+
     if(header->type != TYPE_EXECUTABLE) {
         log(LOG_LEVEL_ERROR, "elf: only executables are supported");
         return false;
