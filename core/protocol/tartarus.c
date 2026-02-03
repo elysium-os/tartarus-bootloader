@@ -55,6 +55,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     memcpy(frozen_map, &g_pmm_map, sizeof(pmm_map_entry_t) * frozen_map_size);
 
     // Setup HHDM
+    log(LOG_LEVEL_INFO, "Mapping HHDM");
     uint64_t hhdm_size = 0;
     for(size_t i = 0; i < frozen_map_size; i++) {
         switch(frozen_map[i].type) {
@@ -99,9 +100,10 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     );
 
     // Load kernel
+    log(LOG_LEVEL_INFO, "Loading kernel");
     elf_loaded_image_t *kernel = elf_load(kernel_node, address_space);
     if(kernel == NULL) panic("failed to load kernel");
-    log(LOG_LEVEL_INFO, "Kernel loaded");
+    log(LOG_LEVEL_INFO, "Kernel loaded (entry=%#llx)", kernel->entry);
 
     // Load modules
     size_t module_count = config_key_count(config, "module", CONFIG_ENTRY_TYPE_STRING);
@@ -116,7 +118,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
 
         vfs_node_t *module_node = vfs_lookup(kernel_node->vfs, module_path);
         if(module_node == NULL) {
-            log(LOG_LEVEL_WARN, "module %s not found", module_path);
+            log(LOG_LEVEL_WARN, "Module %s not found", module_path);
             goto skip_module;
         }
 

@@ -60,7 +60,7 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
 
     // Setup physical memory
     for(int i = 0; i < e820_size; i++) {
-        log(LOG_LEVEL_DEBUG, "e820[%i] = { base: %#llx, length: %#llx, type: %u }", i, e820[i].address, e820[i].length, e820[i].type);
+        log(LOG_LEVEL_DEBUG, "e820_map[%i] = { base: %#llx, length: %#llx, type: %u }", i, e820[i].address, e820[i].length, e820[i].type);
         pmm_map_type_t type;
         switch(e820[i].type) {
             case E820_TYPE_USABLE:           type = PMM_MAP_TYPE_FREE; break;
