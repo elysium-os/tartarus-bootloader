@@ -7,6 +7,7 @@
 #include "memory/pmm.h"
 
 #include "arch/x86_64/cpu.h"
+#include "arch/x86_64/cpuid.h"
 #include "arch/x86_64/gdt.h"
 #include "arch/x86_64/lapic.h"
 #include "arch/x86_64/tsc.h"
@@ -56,16 +57,12 @@ typedef struct [[gnu::packed]] {
 extern nullptr_t g_apinit_start[];
 extern nullptr_t g_apinit_end[];
 
-static uint8_t bsp_lapic_id() {
-    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
-    asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(1), "c"(0));
-    return ebx >> 24;
-}
 
 x86_64_smp_cpu_t *x86_64_smp_initialize_aps(acpi_sdt_header_t *madt_header, void *reserved_init_page, void *address_space, uint64_t stack_pgcnt, uint64_t stack_offset) {
     madt_t *madt = (madt_t *) madt_header;
-    uint8_t bsp_id = bsp_lapic_id();
-    if(bsp_id != x86_64_lapic_id()) panic("current LAPIC id does not match BSP id");
+    uint8_t bsp_id = x86_64_cpuid(1).ebx >> 24;
+    log(LOG_LEVEL_INFO, "BSP ID: %u", bsp_id);
+    if(bsp_id != x86_64_lapic_id()) panic("Current lapic id does not match BSP id");
 
     size_t apinit_size = (uintptr_t) g_apinit_end - (uintptr_t) g_apinit_start;
     if(apinit_size + sizeof(ap_info_t) > PMM_GRANULARITY) panic("unable to fit AP initialization code into a page");
