@@ -2,6 +2,7 @@
 
 #include "common/log.h"
 #include "common/panic.h"
+#include "dev/acpi/tables/madt.h"
 #include "lib/mem.h"
 #include "memory/heap.h"
 #include "memory/pmm.h"
@@ -13,34 +14,6 @@
 #include "arch/x86_64/tsc.h"
 
 #define CYCLES_10MIL 10000000
-
-typedef struct [[gnu::packed]] {
-    acpi_sdt_header_t sdt_header;
-    uint32_t local_apic_address;
-    uint32_t flags;
-} madt_t;
-
-typedef enum {
-    MADT_LAPIC = 0,
-    MADT_IOAPIC,
-    MADT_SOURCE_OVERRIDE,
-    MADT_NMI_SOURCE,
-    MADT_NMI,
-    MADT_LAPIC_ADDRESS,
-    MADT_LX2APIC = 9
-} madt_record_types_t;
-
-typedef struct [[gnu::packed]] {
-    uint8_t type;
-    uint8_t length;
-} madt_record_t;
-
-typedef struct [[gnu::packed]] {
-    madt_record_t base;
-    uint8_t acpi_processor_id;
-    uint8_t lapic_id;
-    uint32_t flags;
-} madt_record_lapic_t;
 
 // has to match boot_info in apinit.asm
 typedef struct [[gnu::packed]] {
