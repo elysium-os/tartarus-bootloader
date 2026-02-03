@@ -1,6 +1,7 @@
 #include "arch/acpi.h"
 #include "arch/fb.h"
 #include "arch/ptm.h"
+#include "arch/smp.h"
 #include "arch/time.h"
 #include "common/config.h"
 #include "common/elf.h"
@@ -15,11 +16,6 @@
 
 #include <stddef.h>
 #include <tartarus.h>
-
-#ifdef __ARCH_X86_64
-#include "arch/x86_64/cpu.h"
-#include "arch/x86_64/smp.h"
-#endif
 
 #ifdef __PLATFORM_X86_64_UEFI
 #include "arch/uefi/uefi.h"
@@ -38,14 +34,6 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
 
 [[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel_node, fb_t *fb) {
     log(LOG_LEVEL_INFO, "Tartarus Protocol Version %u.%u", MAJOR_VERSION, MINOR_VERSION);
-
-#ifdef __ARCH_X86_64
-    void *smp_reserved_page = NULL;
-    if(config_find_bool(config, "smp", true)) {
-        smp_reserved_page = pmm_alloc(PMM_AREA_LOWMEM, 1);
-        if(smp_reserved_page == NULL) panic("unable to reserve SMP initialization page");
-    }
-#endif
 
     ptm_address_space_t *address_space = arch_ptm_create_address_space();
 
@@ -158,18 +146,11 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
 #endif
 
     // Initialize SMP
-#ifdef __ARCH_X86_64
-    x86_64_smp_cpu_t *cpus = NULL;
+    smp_cpu_t *cpus = NULL;
     if(config_find_bool(config, "smp", true)) {
-        log(LOG_LEVEL_INFO, "APINIT reserved page: %#lx", (uintptr_t) smp_reserved_page);
-        if(!g_x86_64_cpu_lapic_support) panic("LAPIC not supported. LAPIC is required for SMP initialization");
-
-        acpi_sdt_header_t *madt = acpi_find_table(rsdp, "APIC");
-        if(madt == NULL) panic("ACPI MADT table not present");
-        cpus = x86_64_smp_initialize_aps(madt, smp_reserved_page, address_space, AP_STACK_PGCNT, HHDM_OFFSET);
+        cpus = smp_initialize_aps(rsdp, address_space, AP_STACK_PGCNT, HHDM_OFFSET);
         log(LOG_LEVEL_INFO, "Initialized SMP");
     }
-#endif
 
     // Setup boot info
     tartarus_kernel_segment_t *kernel_segments = heap_alloc(sizeof(tartarus_kernel_segment_t) * kernel->count);
@@ -215,48 +196,34 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     boot_info->module_count = module_count;
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
-#ifdef __ARCH_X86_64
     if(cpus != NULL) {
         uint8_t cpu_count = 0;
-        for(x86_64_smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
+        for(smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
 
-        uint64_t sequential_id_counter = 0;
-        uint8_t bsp_index = 0;
         tartarus_cpu_t *cpu_array = heap_alloc(sizeof(tartarus_cpu_t) * cpu_count);
-        x86_64_smp_cpu_t *cpu = cpus;
+        smp_cpu_t *cpu = cpus;
         for(uint16_t i = 0; i < cpu_count; i++, cpu = cpu->next) {
-            if(cpu->init_failed) {
-                cpu_array[i].init_state = TARTARUS_CPU_STATE_FAIL;
-                cpu_array[i].sequential_id = 0;
-                cpu_array[i].wake_on_write = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
-                continue;
-            }
+            cpu_array[i].flags = 0;
+            cpu_array[i].park_address = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
 
-            if(cpu->is_bsp) {
-                bsp_index = i;
-                cpu_array[i].wake_on_write = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
-            } else {
-                cpu_array[i].wake_on_write = HHDM_CAST(uint64_t *, cpu->wake_on_write);
-            }
+            if(cpu->init_failed) continue;
+            cpu_array[i].flags |= TARTARUS_CPU_FLAG_BOOT_OK;
 
-            cpu_array[i].sequential_id = sequential_id_counter++;
-            cpu_array[i].init_state = TARTARUS_CPU_STATE_OK;
+            if(!cpu->is_bsp) continue;
+            cpu_array[i].flags |= TARTARUS_CPU_FLAG_IS_BSP;
+            cpu_array[i].park_address = HHDM_CAST(uint64_t *, cpu->park_address);
         }
 
-        boot_info->bsp_index = bsp_index;
         boot_info->cpu_count = cpu_count;
         boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, cpu_array);
     } else {
         tartarus_cpu_t *bsp_cpu = heap_alloc(sizeof(tartarus_cpu_t));
-        bsp_cpu->sequential_id = 0;
-        bsp_cpu->init_state = TARTARUS_CPU_STATE_OK;
-        bsp_cpu->wake_on_write = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
+        bsp_cpu->flags = TARTARUS_CPU_FLAG_BOOT_OK | TARTARUS_CPU_FLAG_IS_BSP;
+        bsp_cpu->park_address = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
 
         boot_info->cpu_count = 1;
         boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, bsp_cpu);
-        boot_info->bsp_index = 0;
     }
-#endif
 
     // Create the elysium memory map
     tartarus_mm_entry_t *memory_map_entries = heap_alloc(sizeof(tartarus_mm_entry_t) * g_pmm_map_size);

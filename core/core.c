@@ -1,5 +1,6 @@
 #include "arch/disk.h"
 #include "arch/fb.h"
+#include "arch/smp.h"
 #include "common/config.h"
 #include "common/log.h"
 #include "common/panic.h"
@@ -26,6 +27,10 @@
 
     for(size_t i = 0; i < g_pmm_map_size; i++) log(LOG_LEVEL_DEBUG, "pmm_map[%lu] = { base: %#llx, length: %#llx, type: %u }", i, g_pmm_map[i].base, g_pmm_map[i].length, g_pmm_map[i].type);
     log(LOG_LEVEL_INFO, "Loaded physical memory map (%lu entries)", g_pmm_map_size);
+
+#ifdef __ARCH_X86_64
+    g_smp_reserved_init_page = pmm_alloc(PMM_AREA_LOWMEM, 1);
+#endif
 
     // Initialize disks
     arch_disk_initialize();
