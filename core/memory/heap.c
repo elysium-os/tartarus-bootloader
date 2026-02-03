@@ -39,6 +39,8 @@ static void alloc(int pages) {
 }
 
 void *heap_alloc(size_t size) {
+    size = MATH_CEIL(size, 8);
+
     for(heap_entry_t *current_entry = g_heap; current_entry != NULL; current_entry = current_entry->next) {
         if(current_entry->size < size) continue;
 
