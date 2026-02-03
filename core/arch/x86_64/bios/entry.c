@@ -78,4 +78,5 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
     pmm_map_set((uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start, PMM_MAP_TYPE_ALLOCATED, true);
 
     core();
+    __builtin_unreachable();
 }
