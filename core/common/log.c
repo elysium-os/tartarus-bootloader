@@ -52,7 +52,7 @@ void log_sink_remove(log_sink_t *sink) {
 }
 
 void log_list(log_level_t level, const char *fmt, va_list list) {
-    internal_fmt(level, "[TARTARUS::%s] ", log_level_stringify(level));
+    internal_fmt(level, "TARTARUS/%s: ", log_level_stringify(level));
     internal_fmt_list(level, fmt, list);
     internal_fmt(level, "\n");
 }
