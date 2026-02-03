@@ -1,9 +1,9 @@
+#include "arch/cpu.h"
 #include "common/log.h"
 #include "core.h"
 #include "memory/pmm.h"
 
 #include "arch/x86_64/bios/int.h"
-#include "arch/x86_64/cpu.h"
 
 #define E820_MAX 512
 #define E820_MAGIC_NUMBER 0x534D4150
@@ -40,7 +40,7 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
     log_sink_add(&g_qemu_debug_sink);
 #endif
 
-    x86_64_cpu_init();
+    arch_cpu_init();
 
     // Load E820
     e820_entry_t e820[E820_MAX];

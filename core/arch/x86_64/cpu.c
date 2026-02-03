@@ -8,7 +8,7 @@ bool g_x86_64_cpu_nx_support = false;
 bool g_x86_64_cpu_pdpe1gb_support = false;
 bool g_x86_64_cpu_lapic_support = false;
 
-void x86_64_cpu_init() {
+void arch_cpu_init() {
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 
     asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0x80000001), "c"(0));
