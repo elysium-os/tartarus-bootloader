@@ -152,7 +152,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     log(LOG_LEVEL_INFO, "RSDP found at %#lx", (uintptr_t) rsdp);
 
     // Prepare SMP init
-#ifdef __PLATFORM_X86_64_UEFI
+#if defined(__UEFI)
     log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
     uefi_bootservices_exit();
 #endif

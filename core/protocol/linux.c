@@ -350,8 +350,10 @@ static_assert(sizeof(boot_params_t) == PMM_GRANULARITY);
     boot_params->screen_info.blue_pos = fb->mask_blue_position;
 #ifdef __PLATFORM_X86_64_BIOS
     boot_params->screen_info.orig_video_is_vga = VIDEO_TYPE_VLFB;
-#elif __PLATFORM_X86_64_UEFI
+#elif __UEFI
     boot_params->screen_info.orig_video_is_vga = VIDEO_TYPE_EFI;
+#else
+#error Unimplemented
 #endif
 
     // Load kernel
@@ -392,7 +394,7 @@ static_assert(sizeof(boot_params_t) == PMM_GRANULARITY);
     }
 
     // Platform exit
-#ifdef __PLATFORM_X86_64_UEFI
+#ifdef __UEFI
     uefi_bootservices_exit();
 #endif
 
