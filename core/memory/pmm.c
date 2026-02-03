@@ -4,6 +4,8 @@
 #include "common/panic.h"
 #include "lib/math.h"
 
+#define SANITIZE_TYPE(TYPE) ((TYPE) == PMM_MAP_TYPE_FREE || (TYPE) == PMM_MAP_TYPE_ALLOCATED || (TYPE) == PMM_MAP_TYPE_EFI_RECLAIMABLE || (TYPE) == PMM_MAP_TYPE_ACPI_RECLAIMABLE)
+
 size_t g_pmm_map_size;
 pmm_map_entry_t g_pmm_map[PMM_MAP_MAX_ENTRIES];
 
@@ -118,9 +120,10 @@ void pmm_map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force
 }
 
 void pmm_map_add(uint64_t base, uint64_t length, pmm_map_type_t type) {
-    if(type == PMM_MAP_TYPE_FREE || type == PMM_MAP_TYPE_ALLOCATED || type == PMM_MAP_TYPE_EFI_RECLAIMABLE || type == PMM_MAP_TYPE_ACPI_RECLAIMABLE) {
-        uint64_t difference = MATH_CEIL(base, PMM_GRANULARITY) - base;
+    if(SANITIZE_TYPE(type)) {
+        uint64_t difference = PMM_GRANULARITY - (base % PMM_GRANULARITY);
         if(difference >= length) return;
+
         base += difference;
         length = MATH_FLOOR(length - difference, PMM_GRANULARITY);
 
