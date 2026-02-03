@@ -66,6 +66,7 @@ local cflags = {
     "-Wextra",
     "-Wvla",
     "-Wshadow",
+    "-Werror"
 }
 
 local defines = {}
