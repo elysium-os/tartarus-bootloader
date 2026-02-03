@@ -2,6 +2,8 @@ local ld = require("ld")
 local c = require("lang_c")
 local nasm = require("lang_nasm")
 
+local install = {}
+
 -- Options
 local options = {
     platform = fab.option("platform", { "x86_64-uefi", "x86_64-bios" }) or "x86_64-uefi",
@@ -10,20 +12,14 @@ local options = {
 
 -- Tools
 local cc = c.get_clang()
-if cc == nil then
-    error("No viable C compiler found")
-end
+assert(cc ~= nil, "No viable C compiler found")
 
 local linker = ld.get_linker()
-if linker == nil then
-    error("No viable linker found")
-end
+assert(linker ~= nil, "No viable linker found")
 
 -- Rules
 local objcopy_path = fab.which("llvm-objcopy") or fab.which("objcopy")
-if objcopy_path == nil then
-    error("No viable objcopy found")
-end
+assert(objcopy_path ~= nil, "No viable objcopy found")
 
 local objcopy_rule = fab.def_rule(
     "objcopy_to_bin",
@@ -128,7 +124,10 @@ if options.platform:starts_with("x86_64") then
             "-DGNU_EFI_USE_MS_ABI"
         })
 
-        table.insert(defines, "__PLATFORM_X86_64_UEFI")
+        table.extend(defines, {
+            "__PLATFORM_X86_64_UEFI",
+            "__UEFI",
+        })
 
         table.extend(asm_flags, { "-f", "elf64" })
 
@@ -195,7 +194,6 @@ if options.platform:starts_with("x86_64") then
     local core = linker:link("tartarus.elf", core_objects, ld_flags, linker_script)
     local binary = objcopy_rule:build("tartarus.bin", { core }, {})
 
-    local install = {}
     if options.platform == "x86_64-bios" then
         local bios_boot = asmc:assemble("x86_64-bios.bin", fab.def_source("boot/x86_64-bios.asm"), { "-f", "bin" })
 
@@ -213,5 +211,6 @@ if options.platform:starts_with("x86_64") then
         install["share/tartarus/tartarus.efi"] = efi
     end
 
-    return { install = install }
 end
+
+return { install = install }
