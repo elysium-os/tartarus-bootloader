@@ -1,6 +1,6 @@
 #include "elf.h"
 
-#include "arch/vm.h"
+#include "arch/ptm.h"
 #include "common/log.h"
 #include "lib/math.h"
 #include "lib/mem.h"
@@ -177,9 +177,9 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
         region->real_vaddr = program_header.vaddr;
         region->aligned_vaddr = aligned_vaddr;
         region->aligned_size = aligned_size;
-        region->read = (program_header.flags & VM_FLAG_READ) != 0;
-        region->write = (program_header.flags & VM_FLAG_WRITE) != 0;
-        region->execute = (program_header.flags & VM_FLAG_EXEC) != 0;
+        region->read = (program_header.flags & PTM_FLAG_READ) != 0;
+        region->write = (program_header.flags & PTM_FLAG_WRITE) != 0;
+        region->execute = (program_header.flags & PTM_FLAG_EXEC) != 0;
         regions = heap_realloc(regions, ++region_count * sizeof(elf_region_t *));
         regions[region_count - 1] = region;
 
@@ -200,12 +200,12 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
         void *addr = paddr + (regions[i]->aligned_vaddr - lowest_vaddr);
         memset(addr, 0, regions[i]->aligned_size);
 
-        arch_vm_map(
+        arch_ptm_map(
             address_space,
             (uintptr_t) addr,
             regions[i]->aligned_vaddr,
             regions[i]->aligned_size,
-            (regions[i]->read ? VM_FLAG_READ : 0) | (regions[i]->write ? VM_FLAG_WRITE : 0) | (regions[i]->execute ? VM_FLAG_EXEC : 0)
+            (regions[i]->read ? PTM_FLAG_READ : 0) | (regions[i]->write ? PTM_FLAG_WRITE : 0) | (regions[i]->execute ? PTM_FLAG_EXEC : 0)
         );
     }
 

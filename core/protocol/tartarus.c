@@ -1,7 +1,7 @@
 #include "arch/acpi.h"
 #include "arch/fb.h"
+#include "arch/ptm.h"
 #include "arch/time.h"
-#include "arch/vm.h"
 #include "common/config.h"
 #include "common/elf.h"
 #include "common/log.h"
@@ -47,7 +47,7 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     }
 #endif
 
-    void *address_space = arch_vm_create_address_space();
+    ptm_address_space_t *address_space = arch_ptm_create_address_space();
 
     // Freeze the memory map
     size_t frozen_map_size = g_pmm_map_size;
@@ -68,16 +68,16 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
 
         uint64_t base = frozen_map[i].base;
         uint64_t length = frozen_map[i].length;
-        if(base % VM_PAGE_GRANULARITY != 0) {
-            length += base % VM_PAGE_GRANULARITY;
-            base -= base % VM_PAGE_GRANULARITY;
+        if(base % PTM_PAGE_GRANULARITY != 0) {
+            length += base % PTM_PAGE_GRANULARITY;
+            base -= base % PTM_PAGE_GRANULARITY;
         }
-        if(length % VM_PAGE_GRANULARITY != 0) length += VM_PAGE_GRANULARITY - length % VM_PAGE_GRANULARITY;
+        if(length % PTM_PAGE_GRANULARITY != 0) length += PTM_PAGE_GRANULARITY - length % PTM_PAGE_GRANULARITY;
 
         if(base + length > hhdm_size) hhdm_size = base + length;
 
-        arch_vm_map(address_space, base, base, length, VM_FLAG_READ | VM_FLAG_WRITE | VM_FLAG_EXEC);
-        arch_vm_map(address_space, base, HHDM_OFFSET + base, length, VM_FLAG_READ | VM_FLAG_WRITE);
+        arch_ptm_map(address_space, base, base, length, PTM_FLAG_READ | PTM_FLAG_WRITE | PTM_FLAG_EXEC);
+        arch_ptm_map(address_space, base, HHDM_OFFSET + base, length, PTM_FLAG_READ | PTM_FLAG_WRITE);
     }
     log(LOG_LEVEL_INFO, "HHDM mapped at offset %#llx (of size %#llx)", HHDM_OFFSET, hhdm_size);
 
@@ -85,17 +85,17 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
 
     // Map the framebuffer into the HHDM
     log(LOG_LEVEL_DEBUG,
-        "Mapping framebuffer %#lx -> %#llx [%#llx]",
-        MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY),
-        (uint64_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY) + MATH_CEIL(fb->size, VM_PAGE_GRANULARITY),
-        (uint64_t) MATH_CEIL(fb->size, VM_PAGE_GRANULARITY));
+        "Mapping framebuffer %#llx -> %#llx [%#llx]",
+        MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
+        (uint64_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY) + MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
+        (uint64_t) MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY));
 
-    arch_vm_map(
+    arch_ptm_map(
         address_space,
-        (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY),
-        (uint64_t) ((uintptr_t) MATH_FLOOR(fb->address, VM_PAGE_GRANULARITY)) + HHDM_OFFSET,
-        MATH_CEIL(fb->size, VM_PAGE_GRANULARITY),
-        VM_FLAG_READ | VM_FLAG_WRITE
+        (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
+        (uint64_t) ((uintptr_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY)) + HHDM_OFFSET,
+        MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
+        PTM_FLAG_READ | PTM_FLAG_WRITE
     );
 
     // Load kernel
@@ -282,7 +282,9 @@ extern void protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) sta
     boot_info->boot_timestamp = arch_time();
 
     // Load the address space
-    arch_vm_load_address_space(address_space);
+#if __ARCH_X86_64
+    arch_ptm_load_address_space(address_space);
+#endif
 
     // Handoff
     log(LOG_LEVEL_INFO, "Kernel handoff");
