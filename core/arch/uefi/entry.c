@@ -6,7 +6,7 @@
 
 #include "arch/uefi/uefi.h"
 
-#ifdef __ARCH_X86_64
+#if defined(__ARCH_X86_64) && defined(__BUILD_DEBUG)
 static void qemu_debug_log(char ch) {
     asm volatile("outb %0, %1" : : "a"(ch), "Nd"(0xE9));
 }
