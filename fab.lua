@@ -43,7 +43,7 @@ local cc_runtime = fab.git(
 -- Common
 local core_sources = sources(
     fab.glob("core/**/*.c", "!core/arch/**"),
-    path(cc_runtime.path, "src/cc-runtime.c")
+    path(fab.build_dir(), cc_runtime.path, "src/cc-runtime.c")
 )
 
 local include_dirs = {
@@ -86,7 +86,7 @@ end
 if options.platform:starts_with("x86_64") then
     table.insert(defines, "__ARCH_X86_64")
 
-    table.insert(include_dirs, c.include_dir(path(freestanding_c_headers.path, "x86_64/include")))
+    table.insert(include_dirs, c.include_dir(path(fab.build_dir(), freestanding_c_headers.path, "x86_64/include")))
 
     table.extend(cflags, {
         "-mabi=sysv",
@@ -146,12 +146,12 @@ if options.platform:starts_with("x86_64") then
         )
 
         table.extend(core_sources, sources(
-            path(pico_efi.path, "x86_64/reloc.c"),
-            path(pico_efi.path, "x86_64/entry.S")
+            path(fab.build_dir(), pico_efi.path, "x86_64/reloc.c"),
+            path(fab.build_dir(), pico_efi.path, "x86_64/entry.S")
         ))
-        table.insert(include_dirs, c.include_dir(path(pico_efi.path, "inc")))
+        table.insert(include_dirs, c.include_dir(path(fab.build_dir(), pico_efi.path, "inc")))
 
-        linker_script = fab.def_source(path(pico_efi.path, "x86_64/link_script.lds"))
+        linker_script = fab.def_source(path(fab.build_dir(), pico_efi.path, "x86_64/link_script.lds"))
     end
 
     if options.platform == "x86_64-bios" then
@@ -176,7 +176,7 @@ if options.platform:starts_with("x86_64") then
             "-melf_i386",
         })
 
-        linker_script = fab.def_source("core/support/link.x86_64.bios.ld")
+        linker_script = fab.def_source("core/arch/x86_64/bios/tartarus.ld")
     end
 
     assert(linker_script ~= nil)
