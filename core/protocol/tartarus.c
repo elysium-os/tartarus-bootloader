@@ -166,20 +166,23 @@
         kernel_segments[i].size = kernel->regions[i]->aligned_size;
     }
 
-    tartarus_framebuffer_t *framebuffer = heap_alloc(sizeof(tartarus_framebuffer_t));
-    framebuffer->vaddr = HHDM_CAST(void *, fb->address);
-    framebuffer->paddr = fb->address;
-    framebuffer->size = fb->size;
-    framebuffer->width = fb->width;
-    framebuffer->height = fb->height;
-    framebuffer->pitch = fb->pitch;
-    framebuffer->bpp = fb->bpp;
-    framebuffer->mask.red_position = fb->mask_red_position;
-    framebuffer->mask.red_size = fb->mask_red_size;
-    framebuffer->mask.green_position = fb->mask_green_position;
-    framebuffer->mask.green_size = fb->mask_green_size;
-    framebuffer->mask.blue_position = fb->mask_blue_position;
-    framebuffer->mask.blue_size = fb->mask_blue_size;
+    tartarus_framebuffer_t *framebuffer = NULL;
+    if(fb != NULL) {
+        framebuffer = heap_alloc(sizeof(tartarus_framebuffer_t));
+        framebuffer->vaddr = HHDM_CAST(void *, fb->address);
+        framebuffer->paddr = fb->address;
+        framebuffer->size = fb->size;
+        framebuffer->width = fb->width;
+        framebuffer->height = fb->height;
+        framebuffer->pitch = fb->pitch;
+        framebuffer->bpp = fb->bpp;
+        framebuffer->mask.red_position = fb->mask_red_position;
+        framebuffer->mask.red_size = fb->mask_red_size;
+        framebuffer->mask.green_position = fb->mask_green_position;
+        framebuffer->mask.green_size = fb->mask_green_size;
+        framebuffer->mask.blue_position = fb->mask_blue_position;
+        framebuffer->mask.blue_size = fb->mask_blue_size;
+    }
 
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
     boot_info->acpi_rsdp_address = (tartarus_paddr_t) (uintptr_t) rsdp;
@@ -189,7 +192,7 @@
     boot_info->hhdm_size = hhdm_size;
     boot_info->kernel_segment_count = kernel->count;
     boot_info->kernel_segments = HHDM_CAST(tartarus_kernel_segment_t *, kernel_segments);
-    boot_info->framebuffer_count = 1;
+    boot_info->framebuffer_count = framebuffer != NULL ? 1 : 0;
     boot_info->framebuffers = HHDM_CAST(tartarus_framebuffer_t *, framebuffer);
     boot_info->module_count = module_count;
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
