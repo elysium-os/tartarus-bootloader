@@ -23,7 +23,7 @@
 #endif
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 0
+#define MINOR_VERSION 1
 
 #define BSP_STACK_PGCNT 16
 #define AP_STACK_PGCNT 4
@@ -203,6 +203,7 @@
         for(uint16_t i = 0; i < cpu_count; i++, cpu = cpu->next) {
             cpu_array[i].flags = 0;
             cpu_array[i].park_address = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
+            cpu_array[i].argument = (__TARTARUS_PTR(uint64_t *)) 0;
 
             if(cpu->init_failed) continue;
             cpu_array[i].flags |= TARTARUS_CPU_FLAG_BOOT_OK;
@@ -210,6 +211,7 @@
             if(!cpu->is_bsp) continue;
             cpu_array[i].flags |= TARTARUS_CPU_FLAG_IS_BSP;
             cpu_array[i].park_address = HHDM_CAST(uint64_t *, cpu->park_address);
+            cpu_array[i].argument = HHDM_CAST(uint64_t *, (uintptr_t) cpu->park_address + 8);
         }
 
         boot_info->cpu_count = cpu_count;

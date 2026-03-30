@@ -13,6 +13,8 @@
 #include "arch/x86_64/lapic.h"
 #include "arch/x86_64/tsc.h"
 
+#include <stdint.h>
+
 #define CYCLES_10MIL 10000000
 
 // has to match boot_info in apinit.asm
@@ -77,7 +79,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
                     cpu->is_bsp = true;
                     goto success;
                 }
-                cpu->park_address = heap_alloc(sizeof(uint64_t));
+                cpu->park_address = heap_alloc(sizeof(uint64_t) + sizeof(uint64_t));
                 *cpu->park_address = 0;
 
                 ap_info->init = 0;
