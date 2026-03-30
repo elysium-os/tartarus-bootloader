@@ -20,7 +20,11 @@ fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict
         EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
         status = gop->QueryMode(gop, i, &info_size, &info);
         if(EFI_ERROR(status)) continue;
+
+        if(info->HorizontalResolution == 0 || info->VerticalResolution == 0 || info->PixelsPerScanLine == 0) continue;
+
         if(strict_rgb && info->PixelFormat != PixelRedGreenBlueReserved8BitPerColor) continue;
+
         UINT32 difference = info->HorizontalResolution > target_width ? info->HorizontalResolution - target_width : target_width - info->HorizontalResolution;
         difference += info->VerticalResolution > target_height ? info->VerticalResolution - target_height : target_height - info->VerticalResolution;
         if(difference > closest_difference || (difference == closest_difference && info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor)) continue;
