@@ -83,6 +83,9 @@ bits 64
     mov fs, rax
     mov gs, rax
 
+    push qword 0
+    push qword 0
+
     mov rax, qword [off(boot_info.park_address)]
     mov rdi, rax
     add rdi, 8
