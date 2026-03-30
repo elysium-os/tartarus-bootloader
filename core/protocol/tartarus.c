@@ -73,19 +73,21 @@
     heap_free(frozen_map);
 
     // Map the framebuffer into the HHDM
-    log(LOG_LEVEL_DEBUG,
-        "Mapping framebuffer %#llx -> %#llx [%#llx]",
-        MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
-        (uint64_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY) + MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
-        (uint64_t) MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY));
+    if(fb != NULL) {
+        log(LOG_LEVEL_DEBUG,
+            "Mapping framebuffer %#llx -> %#llx [%#llx]",
+            MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
+            (uint64_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY) + MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
+            (uint64_t) MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY));
 
-    arch_ptm_map(
-        address_space,
-        (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
-        (uint64_t) ((uintptr_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY)) + HHDM_OFFSET,
-        MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
-        PTM_FLAG_READ | PTM_FLAG_WRITE
-    );
+        arch_ptm_map(
+            address_space,
+            (uint64_t) (uintptr_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
+            (uint64_t) ((uintptr_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY)) + HHDM_OFFSET,
+            MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
+            PTM_FLAG_READ | PTM_FLAG_WRITE
+        );
+    }
 
     // Load kernel
     log(LOG_LEVEL_INFO, "Loading kernel");
