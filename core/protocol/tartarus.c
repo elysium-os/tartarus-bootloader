@@ -213,8 +213,11 @@
             if(cpu->init_failed) continue;
             cpu_array[i].flags |= TARTARUS_CPU_FLAG_BOOT_OK;
 
-            if(!cpu->is_bsp) continue;
-            cpu_array[i].flags |= TARTARUS_CPU_FLAG_IS_BSP;
+            if(cpu->is_bsp) {
+                cpu_array[i].flags |= TARTARUS_CPU_FLAG_IS_BSP;
+                continue;
+            };
+
             cpu_array[i].park_address = HHDM_CAST(uint64_t *, cpu->park_address);
             cpu_array[i].argument = HHDM_CAST(uint64_t *, (uintptr_t) cpu->park_address + 8);
         }
