@@ -83,20 +83,21 @@ bits 64
     mov fs, rax
     mov gs, rax
 
-    mov rdx, qword [off(boot_info.park_address)]
+    mov rax, qword [off(boot_info.park_address)]
+    mov rdi, rax
+    add rdi, 8
 
     lock inc byte [off(boot_info.init)]                     ; Increment init to 1 to signal the BSP we are done
 
 .loop:
-    mov rbx, qword [rdx]
-    test rbx, rbx
+    mov rcx, qword [rax]
+    test rcx, rcx
     jnz short .handoff
     pause
     jmp short .loop
 
 .handoff:
-    mov rdi, qword [off(boot_info.park_address + 8)]
-    mov rax, rdx
+    mov rdi, [rdi]
 
     xor rbx, rbx
     xor rcx, rcx
