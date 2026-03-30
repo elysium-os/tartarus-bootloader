@@ -1,5 +1,5 @@
 // Tartarus Bootloader API
-// Version 1.1.0
+// Protocol Version 2.0
 
 #ifndef __TARTARUS_BOOTLOADER_HEADER
 #define __TARTARUS_BOOTLOADER_HEADER
@@ -64,7 +64,7 @@ typedef struct [[gnu::packed]] {
 
 /// Describes a CPU
 typedef struct [[gnu::packed]] {
-    uint8_t flags;
+    uint64_t flags;
     __TARTARUS_PTR(tartarus_vaddr_t *) park_address;
     __TARTARUS_PTR(uint64_t *) argument;
 } tartarus_cpu_t;
@@ -86,6 +86,7 @@ typedef struct [[gnu::packed]] {
     uint32_t height;
     uint32_t pitch;
     uint8_t bpp;
+    uint8_t rsv0;
 
     struct [[gnu::packed]] {
         uint8_t red_position;
