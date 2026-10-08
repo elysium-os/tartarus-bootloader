@@ -31,7 +31,11 @@
 #define HHDM_OFFSET 0xFFFF800000000000
 #define HHDM_CAST(TYPE, ADDRESS) ((__TARTARUS_PTR(TYPE))((uint64_t) (uintptr_t) (ADDRESS) + HHDM_OFFSET))
 
+#ifdef __ARCH_X86_64
 [[noreturn]] extern void x86_64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t top_page_table, uint64_t boot_info, uint16_t version);
+#elif __ARCH_AARCH64
+[[noreturn]] extern void aarch64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t ttbr0, uint64_t ttbr1, uint64_t txsz, uint64_t boot_info, uint16_t version);
+#endif
 
 [[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel_node, fb_t *fb) {
     log(LOG_LEVEL_INFO, "Tartarus Protocol Version %u.%u", MAJOR_VERSION, MINOR_VERSION);
@@ -264,6 +268,7 @@
 
     // Handoff
     log(LOG_LEVEL_INFO, "Kernel handoff");
+#ifdef __ARCH_X86_64
     x86_64_protocol_tartarus_handoff(
         kernel->entry,
         HHDM_CAST(void *, stack),
@@ -271,5 +276,16 @@
         HHDM_CAST(uint64_t, boot_info),
         ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION
     );
+#elif __ARCH_AARCH64
+    aarch64_protocol_tartarus_handoff(
+        kernel->entry,
+        HHDM_CAST(void *, stack),
+        (uintptr_t) address_space->top_page_tables[0],
+        (uintptr_t) address_space->top_page_tables[1],
+        64 - PTM_VA_BITS(address_space),
+        HHDM_CAST(uint64_t, boot_info),
+        ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION
+    );
+#endif
     __builtin_unreachable();
 }

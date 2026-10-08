@@ -1,0 +1,49 @@
+#pragma once
+
+#include "dev/acpi.h"
+
+typedef struct [[gnu::packed]] {
+    acpi_sdt_header_t sdt_header;
+    uint32_t firmware_ctrl;
+    uint32_t dsdt;
+    uint8_t rsv0;
+    uint8_t preferred_pm_profile;
+    uint16_t sci_int;
+    uint32_t smi_cmd;
+    uint8_t acpi_enable;
+    uint8_t acpi_disable;
+    uint8_t s4bios_req;
+    uint8_t pstate_cnt;
+    uint32_t pm1a_evt_blk;
+    uint32_t pm1b_evt_blk;
+    uint32_t pm1a_cnt_blk;
+    uint32_t pm1b_cnt_blk;
+    uint32_t pm2_cnt_blk;
+    uint32_t pm_tmr_blk;
+    uint32_t gpe0_blk;
+    uint32_t gpe1_blk;
+    uint8_t pm1_evt_len;
+    uint8_t pm1_cnt_len;
+    uint8_t pm2_cnt_len;
+    uint8_t pm_tmr_len;
+    uint8_t gpe0_blk_len;
+    uint8_t gpe1_blk_len;
+    uint8_t gpe1_base;
+    uint8_t cst_cnt;
+    uint16_t p_lvl2_lat;
+    uint16_t p_lvl3_lat;
+    uint16_t flush_size;
+    uint16_t flush_stride;
+    uint8_t duty_offset;
+    uint8_t duty_width;
+    uint8_t day_alarm;
+    uint8_t mon_alarm;
+    uint8_t century;
+    uint16_t iapc_boot_arch;
+    uint8_t rsv1;
+    uint32_t flags;
+    uint8_t reset_reg[12];
+    uint8_t reset_value;
+    uint16_t arm_boot_arch;
+    uint8_t fadt_minor_version;
+} fadt_t;

@@ -11,6 +11,8 @@
 #include "memory/pmm.h"
 #include "protocol/protocol.h"
 
+#include "arch/x86_64/cpu.h"
+
 #include <stddef.h>
 
 #define VERSION_MAJOR 4

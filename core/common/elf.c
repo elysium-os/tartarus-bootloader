@@ -8,9 +8,16 @@
 #include "memory/heap.h"
 #include "memory/pmm.h"
 
+#include <stddef.h>
+
+#ifdef __ARCH_AARCH64
+#include "arch/aarch64/cpu.h"
+#endif
+
 #define LITTLE_ENDIAN 1
 #define CLASS64 2
 #define MACHINE_386 0x3E
+#define MACHINE_AARCH64 0xB7
 #define TYPE_EXECUTABLE 2
 
 #define ELF_MAGIC "\x7f" "ELF"
@@ -106,6 +113,18 @@ static bool validate_elf(elf64_header_t *header) {
         log(LOG_LEVEL_ERROR, "elf: only little endian encoding is supported");
         return false;
     }
+#elif __ARCH_AARCH64
+    if(header->machine != MACHINE_AARCH64) {
+        log(LOG_LEVEL_ERROR, "elf: only the aarch64 instruction-set is supported");
+        return false;
+    }
+
+    if(header->identifier.encoding != LITTLE_ENDIAN) {
+        log(LOG_LEVEL_ERROR, "elf: only little endian encoding is supported");
+        return false;
+    }
+#else
+#error Unimplemented
 #endif
 
     if(header->identifier.class != CLASS64) {
@@ -220,6 +239,16 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
 
         heap_free(loads[i]);
     }
+
+#ifdef __ARCH_AARCH64
+    for(size_t i = 0; i < region_count; i++) {
+        void *addr = paddr + (regions[i]->aligned_vaddr - lowest_vaddr);
+
+        aarch64_cpu_dcache_clean_poc_range((uintptr_t) addr, regions[i]->aligned_size);
+        aarch64_cpu_icache_sync_pou_range((uintptr_t) addr, regions[i]->aligned_size);
+    }
+#endif
+
     if(loads != NULL) heap_free(loads);
 
     elf_loaded_image_t *image = heap_alloc(sizeof(elf_loaded_image_t));

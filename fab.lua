@@ -6,8 +6,8 @@ local install = {}
 
 -- Options
 local options = {
-    platform = fab.option("platform", { "x86_64-uefi", "x86_64-bios" }) or "x86_64-uefi",
-    build_type = fab.option("buildtype", { "debug", "release" }) or "release"
+    platform = fab.option("platform", { "x86_64-uefi", "x86_64-bios", "aarch64-uefi" }) or "x86_64-uefi",
+    build_type = fab.option("buildtype", { "debug", "release" }) or "release",
 }
 
 -- Tools
@@ -36,7 +36,7 @@ local freestanding_c_headers = fab.git(
 
 local cc_runtime = fab.git(
     "cc-runtime",
-    "https://github.com/osdev0/cc-runtime.git",
+    "https://codeberg.org/OSDev/cc-runtime.git",
     "dae79833b57a01b9fd3e359ee31def69f5ae899b"
 )
 
@@ -211,7 +211,70 @@ if options.platform:starts_with("x86_64") then
 
         install["share/tartarus/tartarus.efi"] = efi
     end
+end
 
+if options.platform == "aarch64-uefi" then
+    table.extend(defines, {
+        "__ARCH_AARCH64",
+        "__PLATFORM_AARCH64_UEFI",
+        "__UEFI"
+    })
+
+    table.extend(core_sources, sources(fab.glob("core/arch/{aarch64,uefi}/**/*.{c,S}")))
+
+    table.insert(include_dirs, c.include_dir(path(fab.build_dir(), freestanding_c_headers.path, "aarch64/include")))
+
+    table.extend(cflags, {
+        "-target aarch64-unknown-none-elf",
+        "-mcpu=generic",
+        "-march=armv8-a+nofp+nosimd",
+        "-mgeneral-regs-only",
+        "-fpie",
+        "-fshort-wchar",
+        "-funsigned-char",
+    })
+
+    local ld_flags = {
+        "-maarch64elf",
+        "-ztext",
+        "-pie"
+    }
+
+    -- Pico EFI
+    local pico_efi = fab.git(
+        "pico-efi",
+        "https://codeberg.org/PicoEFI/PicoEFI.git",
+        "8b79fdaa72ee548a8ea24e3dc4d87bf281312865"
+    )
+
+    table.extend(core_sources, sources(
+        path(fab.build_dir(), pico_efi.path, "aarch64/reloc.c"),
+        path(fab.build_dir(), pico_efi.path, "aarch64/entry.S")
+    ))
+
+    table.insert(include_dirs, c.include_dir(path(fab.build_dir(), pico_efi.path, "inc")))
+
+    local linker_script = fab.def_source(path(fab.build_dir(), pico_efi.path, "aarch64/link_script.lds"))
+
+    for _, define in ipairs(defines) do
+        table.insert(cflags, "-D" .. define)
+    end
+
+    local core_objects = generate(core_sources, {
+        c = function(sources) return cc:generate(sources, cflags, include_dirs) end,
+        S = function(sources) return cc:generate(sources, cflags, include_dirs) end,
+    })
+
+    local core = linker:link("tartarus.elf", core_objects, ld_flags, linker_script)
+    local binary = objcopy_rule:build("tartarus.bin", { core }, {})
+
+    local efi = fab.def_rule(
+        "postprocess_efi",
+        fab.path_rel("uefi_postprocess.sh") .. " @IN@ @OUT@",
+        "Postprocessing @IN@ to @OUT@"
+    ):build("tartarus.efi", { binary }, {})
+
+    install["share/tartarus/tartarus.efi"] = efi
 end
 
 return { install = install }
