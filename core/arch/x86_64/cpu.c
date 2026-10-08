@@ -31,7 +31,7 @@ void arch_cpu_init() {
     if(!g_x86_64_cpu_pdpe1gb_support) log(LOG_LEVEL_WARN, "no support for 1gb mappings");
 }
 
-void arch_cpu_halt() {
+[[noreturn]] void arch_cpu_halt() {
     for(;;) asm volatile("hlt");
     __builtin_unreachable();
 }

@@ -11,7 +11,7 @@ void arch_cpu_init() {
     if(((aa64mmfr0 >> 28) & 0xF) == 0xF) panic("missing support for 4k page granularity");
 }
 
-void arch_cpu_halt() {
+[[noreturn]] void arch_cpu_halt() {
     for(;;) asm volatile("wfi");
     __builtin_unreachable();
 }
