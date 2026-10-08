@@ -48,6 +48,12 @@ bits 32
 
     mov eax, cr4
     or eax, (1 << 5)                                        ; Set PAE bit
+
+    cmp byte [off(boot_info.set_la57)], 0
+    je .nola57
+    or eax, (1 << 12)                                       ; Enable 5 level paging
+.nola57:
+
     mov cr4, eax
 
     mov ecx, 0xC0000080
@@ -129,3 +135,4 @@ boot_info:
         dw 0
         dd 0
     .set_nx: db 0
+    .set_la57: db 0

@@ -1,3 +1,5 @@
+extern g_x86_64_cpu_la57_support
+
 global x86_64_protocol_tartarus_handoff
 
 bits 32
@@ -27,6 +29,12 @@ x86_64_protocol_tartarus_handoff:
 
     mov eax, cr4
     or eax, 1 << 5                              ; Enable PAE bit
+
+    cmp byte [g_x86_64_cpu_la57_support], 0
+    je .nola57
+    or eax, (1 << 12)                           ; Enable 5 level paging
+.nola57:
+
     mov cr4, eax
 
     mov ecx, 0xC0000080
