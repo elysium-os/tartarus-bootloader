@@ -8,6 +8,7 @@
 bool g_x86_64_cpu_nx_support = false;
 bool g_x86_64_cpu_pdpe1gb_support = false;
 bool g_x86_64_cpu_lapic_support = false;
+bool g_x86_64_cpu_la57_support = false;
 
 void arch_cpu_init() {
     x86_64_cpuid_registers_t regs;
@@ -18,6 +19,9 @@ void arch_cpu_init() {
 
     regs = x86_64_cpuid(1);
     g_x86_64_cpu_lapic_support = (regs.edx & (1 << 9)) != 0;
+
+    regs = x86_64_cpuid(7);
+    g_x86_64_cpu_la57_support = (regs.ecx & (1 << 16)) != 0;
 
     if(g_x86_64_cpu_nx_support) {
         x86_64_msr_write(X86_64_MSR_EFER, x86_64_msr_read(X86_64_MSR_EFER) | (1 << 11));

@@ -27,6 +27,7 @@ typedef struct [[gnu::packed]] {
     uint16_t gdtr_limit;
     uint32_t gdtr_base;
     uint8_t set_nx;
+    uint8_t set_la57;
 } ap_info_t;
 
 extern nullptr_t g_apinit_start[];
@@ -51,6 +52,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
     ap_info->gdtr_limit = g_x86_64_gdt_limit;
     ap_info->gdtr_base = (uintptr_t) g_x86_64_gdt;
     ap_info->set_nx = g_x86_64_cpu_nx_support;
+    ap_info->set_la57 = g_x86_64_cpu_la57_support;
 
     smp_cpu_t *cpus = NULL;
     for(size_t count = sizeof(madt_t); count < madt->sdt_header.length; count += ((madt_record_t *) ((uintptr_t) madt + count))->length) {

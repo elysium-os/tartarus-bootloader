@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lib/math.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -9,6 +11,7 @@
 
 #define PMM_AREA_CONVENTIONAL ((pmm_map_area_t) {.start = 0, .end = 0xA0000})
 #define PMM_AREA_LOWMEM ((pmm_map_area_t) {.start = 0, .end = 0x100000})
+#define PMM_AREA_4GB ((pmm_map_area_t) {.start = 0, .end = MATH_FLOOR(UINT32_MAX, PMM_GRANULARITY)})
 #define PMM_AREA_STANDARD ((pmm_map_area_t) {.start = 0x100000, .end = UINTPTR_MAX})
 
 #else

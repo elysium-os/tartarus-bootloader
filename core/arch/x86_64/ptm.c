@@ -70,9 +70,9 @@ static void map_page(ptm_address_space_t *as, uint64_t vaddr, uint64_t paddr, pt
 
 ptm_address_space_t *arch_ptm_create_address_space() {
     ptm_address_space_t *as = heap_alloc(sizeof(ptm_address_space_t));
-    as->level_count = 4;
+    as->level_count = g_x86_64_cpu_la57_support ? 5 : 4;
 
-    void *top_pagemap = pmm_alloc(PMM_AREA_STANDARD, 1);
+    void *top_pagemap = pmm_alloc(PMM_AREA_4GB, 1);
     memset(top_pagemap, 0, PMM_GRANULARITY);
     as->top_page_table = top_pagemap;
 
