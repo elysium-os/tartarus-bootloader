@@ -59,7 +59,7 @@ void log_list(log_level_t level, const char *fmt, va_list list) {
 
 void log(log_level_t level, const char *fmt, ...) {
     va_list list;
-    va_start(list, str);
+    va_start(list, fmt);
     log_list(level, fmt, list);
     va_end(list);
 }

@@ -30,14 +30,14 @@ local objcopy_rule = fab.def_rule(
 -- Common Dependencies
 local freestanding_c_headers = fab.git(
     "freestanding-c-headers",
-    "https://github.com/osdev0/freestnd-c-hdrs.git",
-    "5e11c3da645d8f203e93dc23703b14a15c5b7afc"
+    "https://github.com/osdev0/freestanding-c-hdrs.git",
+    "38fed4e1e3365733ddbfa03b0a28936243ad31e9"
 )
 
 local cc_runtime = fab.git(
     "cc-runtime",
-    "https://codeberg.org/OSDev/cc-runtime.git",
-    "dae79833b57a01b9fd3e359ee31def69f5ae899b"
+    "https://github.com/osdev0/cc-runtime.git",
+    "9891629daf3703d0ddecd295772df7da82ab25b9"
 )
 
 -- Common
@@ -48,7 +48,8 @@ local core_sources = sources(
 
 local include_dirs = {
     c.include_dir("."),
-    c.include_dir("core")
+    c.include_dir("core"),
+    c.include_dir(path(fab.build_dir(), freestanding_c_headers.path, "include"))
 }
 
 local cflags = {
@@ -85,8 +86,6 @@ end
 -- Platforms
 if options.platform:starts_with("x86_64") then
     table.insert(defines, "__ARCH_X86_64")
-
-    table.insert(include_dirs, c.include_dir(path(fab.build_dir(), freestanding_c_headers.path, "x86_64/include")))
 
     table.extend(cflags, {
         "-mabi=sysv",
@@ -221,8 +220,6 @@ if options.platform == "aarch64-uefi" then
     })
 
     table.extend(core_sources, sources(fab.glob("core/arch/{aarch64,uefi}/**/*.{c,S}")))
-
-    table.insert(include_dirs, c.include_dir(path(fab.build_dir(), freestanding_c_headers.path, "aarch64/include")))
 
     table.extend(cflags, {
         "-target aarch64-unknown-none-elf",
