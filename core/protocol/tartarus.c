@@ -22,7 +22,7 @@
 #include "arch/uefi/uefi.h"
 #endif
 
-#define MAJOR_VERSION 3
+#define MAJOR_VERSION 4
 #define MINOR_VERSION 0
 
 #define BSP_STACK_PGCNT 16
@@ -194,6 +194,9 @@
     }
 
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
+
+    // @todo: arm device tree support?
+    boot_info->device_tree_address = (tartarus_paddr_t) (uintptr_t) 0;
     boot_info->acpi_rsdp_address = (tartarus_paddr_t) (uintptr_t) rsdp;
     boot_info->bsp_entry_stack_size = BSP_STACK_PGCNT * PMM_GRANULARITY;
     boot_info->ap_entry_stack_size = AP_STACK_PGCNT * PMM_GRANULARITY;

@@ -114,6 +114,7 @@ typedef struct [[gnu::packed]] {
     uint64_t boot_timestamp;
 
     tartarus_paddr_t acpi_rsdp_address;
+    tartarus_paddr_t device_tree_address;
     tartarus_size_t bsp_entry_stack_size;
     tartarus_size_t ap_entry_stack_size;
 
