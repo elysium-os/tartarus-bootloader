@@ -1,9 +1,13 @@
 #include "arch/cpu.h"
+#include "common/dtb.h"
 #include "common/log.h"
 #include "common/panic.h"
 #include "core.h"
+#include "efi/efierr.h"
+#include "lib/mem.h"
 #include "memory/pmm.h"
 
+#include "arch/riscv64/csr.h"
 #include "arch/uefi/uefi.h"
 
 #if defined(__ARCH_X86_64) && defined(__BUILD_DEBUG)
@@ -16,6 +20,38 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
 
 #define PAGES_RESERVED_FOR_UEFI 64
 
+#if defined(__ARCH_RISCV64)
+#include "arch/riscv64/sbi.h"
+
+#include <efi/protocol/riscv/efiboot.h>
+static EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
+static bool compare_guid(EFI_GUID *a, EFI_GUID *b) {
+    return memcmp(a, b, sizeof(EFI_GUID)) == 0;
+}
+
+static void *find_dtb(EFI_SYSTEM_TABLE *st) {
+    for(UINTN i = 0; i < st->NumberOfTableEntries; i++) {
+        EFI_CONFIGURATION_TABLE *t = &st->ConfigurationTable[i];
+        if(compare_guid(&t->VendorGuid, &dtb_guid)) return t->VendorTable;
+    }
+    return NULL;
+}
+
+
+static EFI_GUID riscv_boot_guid = RISCV_EFI_BOOT_PROTOCOL_GUID;
+
+static uint32_t get_boot_hartid(EFI_SYSTEM_TABLE *st) {
+    RISCV_EFI_BOOT_PROTOCOL *p = NULL;
+    EFI_STATUS s = st->BootServices->LocateProtocol(&riscv_boot_guid, NULL, (void **) &p);
+    if(s != EFI_SUCCESS) panic("Failed to locate RISCV_EFI_BOOT_PROTOCOL");
+    UINTN hartid;
+    if(p->GetBootHartId(p, &hartid) != EFI_SUCCESS) panic("Failed to get boot hart id");
+    return hartid;
+}
+#endif
+
+
+static log_sink_t g_sbi_putchar_sink = {.level = LOG_LEVEL_DEBUG, .char_out = sbi_legacy_putc};
 [[noreturn]] EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table) {
     g_uefi_system_table = system_table;
     g_uefi_image_handle = image_handle;
@@ -24,7 +60,17 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
     qemu_debug_log('\n');
     log_sink_add(&g_qemu_debug_sink);
 #endif
+#if defined(__ARCH_RISCV64) && defined(__BUILD_DEBUG)
+    log_sink_add(&g_sbi_putchar_sink);
+#else
     log_sink_add(&g_uefi_log_sink);
+#endif
+
+#if defined(__ARCH_RISCV64)
+    void *dtb = find_dtb(system_table);
+    arch_dtb_early_init((uintptr_t) dtb);
+    ARCH_CSR_WRITE(sscratch, get_boot_hartid(system_table));
+#endif
 
     arch_cpu_init();
 
