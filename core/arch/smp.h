@@ -10,6 +10,8 @@ typedef struct smp_cpu {
     uint8_t lapic_id;
 #elif __ARCH_AARCH64
     uint64_t mpidr;
+#elif __ARCH_RISCV64
+    uint64_t hartid;
 #endif
 
     bool is_bsp;

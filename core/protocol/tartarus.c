@@ -18,6 +18,11 @@
 #include <stdint.h>
 #include <tartarus.h>
 
+// @todo: I'm not a fan of this...
+#if defined(__ARCH_RISCV64)
+#include "common/dtb.h"
+#endif
+
 #ifdef __UEFI
 #include "arch/uefi/uefi.h"
 #endif
@@ -35,6 +40,10 @@
 [[noreturn]] extern void x86_64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t top_page_table, uint64_t boot_info, uint16_t version);
 #elif __ARCH_AARCH64
 [[noreturn]] extern void aarch64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t ttbr0, uint64_t ttbr1, uint64_t txsz, uint64_t boot_info, uint16_t version);
+#elif __ARCH_RISCV64
+[[noreturn]] extern void riscv64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t satp, uint64_t boot_info, uint16_t version);
+#else
+#error Unimplemented
 #endif
 
 [[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel_node, fb_t *fb) {
@@ -146,8 +155,6 @@
 
     // Allocate stack
     void *stack = pmm_alloc(PMM_AREA_STANDARD, BSP_STACK_PGCNT) + (BSP_STACK_PGCNT * PMM_GRANULARITY);
-
-
     // Prepare SMP init
 #if defined(__UEFI)
     log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
@@ -195,8 +202,14 @@
 
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
 
+#ifdef __ARCH_RISCV64
+    boot_info->device_tree_address = (tartarus_paddr_t) (uintptr_t) arch_dtb_get();
+#else
     // @todo: arm device tree support?
     boot_info->device_tree_address = (tartarus_paddr_t) (uintptr_t) 0;
+#endif
+
+
     boot_info->acpi_rsdp_address = (tartarus_paddr_t) (uintptr_t) rsdp;
     boot_info->bsp_entry_stack_size = BSP_STACK_PGCNT * PMM_GRANULARITY;
     boot_info->ap_entry_stack_size = AP_STACK_PGCNT * PMM_GRANULARITY;
@@ -289,6 +302,8 @@
         HHDM_CAST(uint64_t, boot_info),
         ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION
     );
+#elif __ARCH_RISCV64
+    riscv64_protocol_tartarus_handoff(kernel->entry, HHDM_CAST(void *, stack), (uintptr_t) address_space->satp_value, HHDM_CAST(uint64_t, boot_info), ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION);
 #endif
     __builtin_unreachable();
 }

@@ -18,6 +18,8 @@
 #define CLASS64 2
 #define MACHINE_386 0x3E
 #define MACHINE_AARCH64 0xB7
+#define MACHINE_RISCV64 0xF3
+
 #define TYPE_EXECUTABLE 2
 
 #define ELF_MAGIC "\x7f" "ELF"
@@ -115,6 +117,16 @@ static bool validate_elf(elf64_header_t *header) {
     }
 #elif __ARCH_AARCH64
     if(header->machine != MACHINE_AARCH64) {
+        log(LOG_LEVEL_ERROR, "elf: only the aarch64 instruction-set is supported");
+        return false;
+    }
+
+    if(header->identifier.encoding != LITTLE_ENDIAN) {
+        log(LOG_LEVEL_ERROR, "elf: only little endian encoding is supported");
+        return false;
+    }
+#elif __ARCH_RISCV64
+    if(header->machine != MACHINE_RISCV64) {
         log(LOG_LEVEL_ERROR, "elf: only the aarch64 instruction-set is supported");
         return false;
     }

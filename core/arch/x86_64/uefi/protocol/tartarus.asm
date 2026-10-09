@@ -66,6 +66,7 @@ nola57:
     xor rbp, rbp
     mov rsp, rsi                                ; Load stack from rsi
     push qword 0                                ; Push an invalid return address
+    push qword 0                                ; Push an invaild base pointer
 
     mov rax, rdi                                ; Move entry_address into rax
     mov rdi, rcx                                ; Move boot_info into rdi

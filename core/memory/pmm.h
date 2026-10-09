@@ -22,6 +22,13 @@
 #define PMM_AREA_LOWMEM PMM_AREA_STANDARD
 #define PMM_AREA_STANDARD ((pmm_map_area_t) {.start = 0, .end = UINTPTR_MAX})
 
+#elif __ARCH_RISCV64
+
+#define PMM_GRANULARITY 0x1000
+
+#define PMM_AREA_CONVENTIONAL PMM_AREA_STANDARD
+#define PMM_AREA_LOWMEM PMM_AREA_STANDARD
+#define PMM_AREA_STANDARD ((pmm_map_area_t) {.start = 0, .end = UINTPTR_MAX})
 #else
 #error Unimplemented
 #endif

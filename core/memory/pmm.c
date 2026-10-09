@@ -21,102 +21,104 @@ static void map_delete(size_t index) {
     g_pmm_map_size--;
 }
 
-void pmm_map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force) {
-    for(size_t i = 0; i < g_pmm_map_size; i++) {
-        pmm_map_entry_t *map_entry = &g_pmm_map[i];
-
-        bool override = type > map_entry->type || force;
-        bool overlap_start = false, overlap_end = false;
-        if(base > map_entry->base && base < map_entry->base + map_entry->length) overlap_start = true;
-        if(base + length > map_entry->base && base + length < map_entry->base + map_entry->length) overlap_end = true;
-
-        // Map entry falls over the entry
-        if(overlap_start && overlap_end) {
-            if(!override) return;
-
-            size_t start_base = map_entry->base;
-            size_t start_length = base - start_base;
-
-            size_t end_base = base + length;
-            size_t end_length = (map_entry->base + map_entry->length) - end_base;
-
-            map_entry->base = start_base;
-            map_entry->length = start_length;
-            pmm_map_set(end_base, end_length, map_entry->type, true);
-            continue;
-        }
-
-        // Start of entry overlaps with map entry
-        if(overlap_start) {
-            size_t amount = (map_entry->base + map_entry->length) - base;
-            if(override) {
-                map_entry->length -= amount;
-                if(map_entry->length == 0) {
-                    map_delete(i);
-                    --i;
-                }
-            } else {
-                length -= amount;
-                base += amount;
-            }
-        }
-
-        // End of entry overlaps with map entry
-        if(overlap_end) {
-            size_t amount = (base + length) - map_entry->base;
-            if(override) {
-                map_entry->length -= amount;
-                map_entry->base += amount;
-                if(map_entry->length == 0) {
-                    map_delete(i);
-                    --i;
-                }
-            } else {
-                length -= amount;
-            }
-        }
-
-        // Entry falls over map entry
-        if(base < map_entry->base && base + length > map_entry->base + map_entry->length) {
-            if(override) {
-                map_delete(i);
-                --i;
-                continue;
-            }
-
-            size_t start_base = base;
-            size_t start_length = map_entry->base - start_base;
-
-            size_t end_base = map_entry->base + map_entry->length;
-            size_t end_length = (base + length) - end_base;
-
-            pmm_map_set(start_base, start_length, type, force);
-            pmm_map_set(end_base, end_length, type, force);
-            return;
-        }
-
-        // Entry equals map entry
-        if(base == map_entry->base && length == map_entry->length) {
-            if(!override) return;
-            map_delete(i);
-            --i;
-        }
-    }
-    if(length == 0) return;
-
+static void map_insert_region(uint64_t base, uint64_t length, pmm_map_type_t type) {
     size_t i = 0;
     for(; i < g_pmm_map_size && g_pmm_map[i].base <= base; i++);
-    if(i != 0 && g_pmm_map[i - 1].type == type && g_pmm_map[i - 1].base + g_pmm_map[i - 1].length == base) {
-        g_pmm_map[i - 1].length += length;
-        return;
+
+    if(i != 0) {
+        pmm_map_entry_t *previous = &g_pmm_map[i - 1];
+        if(previous->type == type && previous->base + previous->length == base) {
+            previous->length += length;
+            return;
+        }
     }
-    if(g_pmm_map[i].type == type && g_pmm_map[i].base == base + length) {
-        g_pmm_map[i].base = base;
-        g_pmm_map[i].length += length;
-        return;
+
+    if(i < g_pmm_map_size) {
+        pmm_map_entry_t *next = &g_pmm_map[i];
+        if(next->type == type && next->base == base + length) {
+            next->base = base;
+            next->length += length;
+            return;
+        }
     }
 
     map_insert(i, (pmm_map_entry_t) {.base = base, .length = length, .type = type});
+}
+
+void pmm_map_set(uint64_t base, uint64_t length, pmm_map_type_t type, bool force) {
+    if(length == 0) return;
+    uint64_t end = base + length;
+
+    // Remove / trim existing entries that we override
+    for(size_t i = 0; i < g_pmm_map_size;) {
+        pmm_map_entry_t *entry = &g_pmm_map[i];
+        uint64_t entry_end = entry->base + entry->length;
+
+        if(entry->base >= end || entry_end <= base) {
+            i++;
+            continue;
+        }
+
+        if(!(type > entry->type || force)) {
+            i++;
+            continue;
+        }
+
+        if(base <= entry->base && end >= entry_end) {
+            // existing entry is completely covered
+            map_delete(i);
+        } else if(entry->base < base && entry_end > end) {
+            // new region splits the existing entry in two
+            uint64_t old_end = entry_end;
+            entry->length = base - entry->base;
+            map_insert(i + 1, (pmm_map_entry_t) {.base = end, .length = old_end - end, .type = entry->type});
+            i += 2;
+        } else if(entry->base < base) {
+            // existing entry overlaps the start of the new region
+            entry->length = base - entry->base;
+            i++;
+        } else {
+            // existing entry overlaps the end of the new region
+            entry->base = end;
+            entry->length = entry_end - end;
+            i++;
+        }
+    }
+
+    // insert the parts of the new region not already occupied by higher priority entries
+    // the new region may be split into multiple pieces
+    uint64_t current = base;
+    while(current < end) {
+        uint64_t stop = end;
+        bool blocked = false;
+
+        for(size_t i = 0; i < g_pmm_map_size; i++) {
+            pmm_map_entry_t *entry = &g_pmm_map[i];
+            uint64_t entry_end = entry->base + entry->length;
+
+            if(entry_end <= current) continue;
+            if(entry->base >= end) {
+                if(entry->base < stop) stop = entry->base;
+                break;
+            }
+            if(entry->base > current) {
+                stop = entry->base;
+                break;
+            }
+
+            current = entry_end;
+            blocked = true;
+            break;
+        }
+
+        if(blocked) continue;
+        if(stop > current) {
+            map_insert_region(current, stop - current, type);
+            current = stop;
+        } else {
+            break;
+        }
+    }
 }
 
 void pmm_map_add(uint64_t base, uint64_t length, pmm_map_type_t type) {
