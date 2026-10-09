@@ -82,6 +82,8 @@ nola57:
     xor r13, r13
     xor r14, r14
     xor r15, r15
-    cld
+
+    push qword 0x2
+    popfq
 
     jmp rax
