@@ -70,6 +70,7 @@ entry_long:
     xor rsp, rsp
     mov rsp, qword [abs stack]
     push qword 0                                ; Push an invalid return address
+    push qword 0                                ; Push an invaild base pointer
 
     xor rbx, rbx
     xor rcx, rcx
@@ -90,6 +91,6 @@ entry_long:
 
 boot_info: dq 0
 version: dq 0
-top_page_table: dw 0
+top_page_table: dq 0
 stack: dq 0
 kernel_entry: dq 0

@@ -4,6 +4,7 @@
 
 size_t string_length(const char *str);
 int string_cmp(const char *lhs, const char *rhs);
+int string_ncmp(const char *lhs, const char *rhs, size_t size);
 bool string_eq(const char *lhs, const char *rhs);
 bool string_case_eq(const char *lhs, const char *rhs);
 char *string_copy(char *dest, const char *src);
