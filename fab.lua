@@ -210,7 +210,6 @@ if architecture == "riscv64" then
         "-mabi=lp64",
         "-march=rv64ima_zihintpause",
         "-mcmodel=medany",
-        "-fno-pic",
         "-fshort-wchar",
         "-funsigned-char",
     })
@@ -224,12 +223,17 @@ if architecture == "riscv64" then
     table.extend(core_sources, sources(fab.glob("core/arch/riscv64/**/*.{c,S}", "!core/arch/riscv64/{uefi,opensbi}/**")))
 
     if firmware == "opensbi" then
+        table.insert(flags.c, "-fno-pic")
+
         table.insert(defines, "__PLATFORM_RISCV64_OPENSBI")
         table.extend(core_sources, sources(fab.glob("core/arch/riscv64/opensbi/**/*.{c,S}")))
         linker_script = fab.def_source("core/arch/riscv64/opensbi/tartarus.ld")
     end
 
     if firmware == "uefi" then
+        table.insert(flags.c, "-fpie")
+        table.insert(flags.ld, "-pie")
+
         table.insert(defines, "__PLATFORM_RISCV64_UEFI")
     end
 end
