@@ -7,6 +7,7 @@
 #include "memory/heap.h"
 #include "memory/pmm.h"
 
+#include "arch/uefi/disk.h"
 #include "arch/uefi/uefi.h"
 
 #define UEFI_DISK(DISK) (CONTAINER_OF((DISK), uefi_disk_t, common))
@@ -16,7 +17,15 @@ typedef struct {
     EFI_BLOCK_IO *io;
 } uefi_disk_t;
 
-void arch_disk_initialize() {
+static bool uefi_disk_read(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest);
+static bool uefi_disk_write(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src);
+
+static const disk_ops_t g_uefi_disk_ops = {
+    .read_sector = uefi_disk_read,
+    .write_sector = uefi_disk_write,
+};
+
+void uefi_disk_initialize() {
     UINTN buffer_size = 0;
     EFI_HANDLE *buffer = nullptr;
     EFI_GUID guid = EFI_BLOCK_IO_PROTOCOL_GUID;
@@ -40,6 +49,7 @@ void arch_disk_initialize() {
         disk->common.read_only = io->Media->ReadOnly;
         disk->common.sector_size = io->Media->BlockSize;
         disk->common.sector_count = io->Media->LastBlock + 1;
+        disk->common.ops = &g_uefi_disk_ops;
         disk->common.partitions = 0;
         disk_initialize_partitions(&disk->common);
 
@@ -48,7 +58,7 @@ void arch_disk_initialize() {
     }
 }
 
-bool arch_disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
+static bool uefi_disk_read(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
     UINTN buffer_size = sector_count * UEFI_DISK(disk)->io->Media->BlockSize;
     void *buffer = pmm_alloc(PMM_AREA_STANDARD, MATH_DIV_CEIL(buffer_size, PMM_GRANULARITY));
     EFI_STATUS status = UEFI_DISK(disk)->io->ReadBlocks(UEFI_DISK(disk)->io, UEFI_DISK(disk)->io->Media->MediaId, lba, buffer_size, buffer);
@@ -57,7 +67,7 @@ bool arch_disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, vo
     return EFI_ERROR(status);
 }
 
-bool arch_disk_write_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
+static bool uefi_disk_write(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
     UINTN buffer_size = sector_count * UEFI_DISK(disk)->io->Media->BlockSize;
     void *buffer = pmm_alloc(PMM_AREA_STANDARD, MATH_DIV_CEIL(buffer_size, PMM_GRANULARITY));
     memcpy(buffer, src, buffer_size);

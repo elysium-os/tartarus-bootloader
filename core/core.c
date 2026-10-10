@@ -1,9 +1,9 @@
-#include "arch/disk.h"
 #include "arch/fb.h"
 #include "arch/smp.h"
 #include "common/config.h"
 #include "common/log.h"
 #include "common/panic.h"
+#include "dev/discovery.h"
 #include "dev/disk.h"
 #include "fs/fat.h"
 #include "fs/vfs.h"
@@ -34,8 +34,8 @@
     g_smp_reserved_init_page = pmm_alloc(PMM_AREA_LOWMEM, 1);
 #endif
 
-    // Initialize disks
-    arch_disk_initialize();
+    // Discover disks
+    device_discover();
     int disk_count = 0;
     for(disk_t *disk = g_disks; disk != nullptr; disk = disk->next) disk_count++;
     log(LOG_LEVEL_INFO, "Initialized %i disks", disk_count);

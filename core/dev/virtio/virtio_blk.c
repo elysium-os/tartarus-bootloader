@@ -100,6 +100,11 @@ bool virtio_blk_write(disk_t *common, uint64_t lba, uint64_t sector_count, void 
     return virtio_blk_request(disk, VIRTIO_BLK_T_OUT, lba, (uint32_t) (sector_count * common->sector_size), src, false);
 }
 
+static const disk_ops_t g_virtio_blk_ops = {
+    .read_sector = virtio_blk_read,
+    .write_sector = virtio_blk_write,
+};
+
 static bool virtio_blk_probe(virtio_mmio_slot_t *slot) {
     virtio_mmio_reset(slot);
 
@@ -144,6 +149,7 @@ static bool virtio_blk_probe(virtio_mmio_slot_t *slot) {
     disk->common.sector_size = VIRTIO_BLK_SECTOR_SIZE;
     disk->common.sector_count = capacity;
     disk->common.optimal_transfer_size = 1;
+    disk->common.ops = &g_virtio_blk_ops;
     disk->common.partitions = nullptr;
 
     virtio_mmio_set_status(slot, status |= VIRTIO_STATUS_DRIVER_OK);

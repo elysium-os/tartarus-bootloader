@@ -5,7 +5,6 @@
 #include "common/panic.h"
 #include "dev/firmware.h"
 #include "dev/virtio/virtio_mmio.h"
-#include "lib/string.h"
 #include "memory/pmm.h"
 
 #include <smoldtb.h>
@@ -45,8 +44,7 @@ bool dtb_early_init(void *dtb_pointer) {
     return dtb_init((uintptr_t) dtb_pointer, ops);
 }
 
-#if defined(__ARCH_RISCV64)
-static void get_cells(dtb_node *parent, size_t *addr_cells, size_t *size_cells) {
+static void get_cells(dtb_node *parent, smoldtb_value *addr_cells, smoldtb_value *size_cells) {
     *addr_cells = 2;
     *size_cells = 1;
 
@@ -56,7 +54,7 @@ static void get_cells(dtb_node *parent, size_t *addr_cells, size_t *size_cells) 
 }
 
 static void for_each_reg(dtb_node *child, void (*fn)(uintptr_t base, size_t len)) {
-    size_t addr_cells, size_cells;
+    smoldtb_value addr_cells, size_cells;
     get_cells(dtb_get_parent(child), &addr_cells, &size_cells);
 
     dtb_prop *reg = dtb_find_prop(child, "reg");
@@ -71,22 +69,25 @@ static void for_each_reg(dtb_node *child, void (*fn)(uintptr_t base, size_t len)
     dtb_pair *values = __builtin_alloca(pairs * sizeof(dtb_pair));
 
     dtb_read_prop_2(reg, layout, values);
-    for(size_t i = 0; i < pairs; i++) fn(values[i].a, values[i].b);
+    for(size_t i = 0; i < pairs; i++) fn((uintptr_t) values[i].a, (size_t) values[i].b);
 }
-#endif
+
+typedef struct {
+    const char *compatible;
+    void (*register_device)(uintptr_t base, size_t len);
+} dtb_driver_t;
+
+// Matches "compatible" string in device tree
+static const dtb_driver_t g_dtb_drivers[] = {
+    {"virtio,mmio", virtio_mmio_register},
+};
 
 void dtb_init_devices() {
-    // @todo: MOVE DEVICE DISCOVERY SOMEWHERE ELSE
-#if defined(__ARCH_RISCV64)
-    dtb_node *soc = dtb_find("/soc");
-    for(dtb_node *node = dtb_get_child(soc); node != nullptr; node = dtb_get_sibling(node)) {
-        dtb_node_stat stat;
+    for(size_t i = 0; i < sizeof(g_dtb_drivers) / sizeof(g_dtb_drivers[0]); i++) {
+        const dtb_driver_t *driver = &g_dtb_drivers[i];
 
-        if(!dtb_stat_node(node, &stat)) continue;
-
-        if(string_ncmp(stat.name, "virtio_mmio@", 11) == 0) { for_each_reg(node, virtio_mmio_register); }
+        for(dtb_node *node = dtb_find_compatible(nullptr, driver->compatible); node != nullptr; node = dtb_find_compatible(node, driver->compatible)) { for_each_reg(node, driver->register_device); }
     }
-#endif
 }
 
 static bool check_padding(uint64_t base, uint64_t length) {

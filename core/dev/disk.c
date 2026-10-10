@@ -1,6 +1,5 @@
 #include "disk.h"
 
-#include "arch/disk.h"
 #include "common/log.h"
 #include "common/panic.h"
 #include "lib/math.h"
@@ -11,6 +10,14 @@
 #define GPT_TYPE_PROTECTIVE 0xEE
 
 disk_t *g_disks;
+
+bool disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
+    return disk->ops->read_sector(disk, lba, sector_count, dest);
+}
+
+bool disk_write_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
+    return disk->ops->write_sector(disk, lba, sector_count, src);
+}
 
 typedef struct [[gnu::packed]] {
     uint8_t boot_indicator;
@@ -57,7 +64,7 @@ static void initialize_gpt_partitions(disk_t *disk, gpt_header_t *header) {
     uint32_t array_sectors = MATH_DIV_CEIL(header->partition_array_count * header->partition_entry_size, disk->sector_size);
     uint32_t buf_size = MATH_DIV_CEIL(array_sectors * disk->sector_size, PMM_GRANULARITY);
     void *buf = pmm_alloc(PMM_AREA_CONVENTIONAL, buf_size);
-    if(!arch_disk_read_sector(disk, header->partition_array_lba, array_sectors, buf)) {
+    if(!disk_read_sector(disk, header->partition_array_lba, array_sectors, buf)) {
         for(uint32_t i = 0; i < header->partition_array_count; i++) {
             gpt_entry_t *entry = (gpt_entry_t *) ((uintptr_t) buf + i * header->partition_entry_size);
             bool is_empty = true;
@@ -85,10 +92,10 @@ void disk_initialize_partitions(disk_t *disk) {
     int buf_size = MATH_DIV_CEIL(disk->sector_size, PMM_GRANULARITY);
     void *buf = pmm_alloc(PMM_AREA_CONVENTIONAL, buf_size);
 
-    if(!arch_disk_read_sector(disk, 0, 1, buf)) {
+    if(!disk_read_sector(disk, 0, 1, buf)) {
         mbr_t *mbr = (mbr_t *) ((uintptr_t) buf + 440);
         if(mbr->entries[0].type == GPT_TYPE_PROTECTIVE) {
-            arch_disk_read_sector(disk, mbr->entries[0].start_lba, 1, buf);
+            disk_read_sector(disk, mbr->entries[0].start_lba, 1, buf);
             initialize_gpt_partitions(disk, (gpt_header_t *) buf);
         } else {
             log(LOG_LEVEL_WARN, "ignoring drive %#llx because it is partitioned with a legacy MBR", (uint64_t) disk->id);
@@ -107,7 +114,7 @@ void disk_read(disk_part_t *part, uint64_t offset, uint64_t count, void *dest) {
     uint64_t buf_size = MATH_DIV_CEIL(part->disk->sector_size * sect_count, PMM_GRANULARITY);
     void *buf = pmm_alloc(PMM_AREA_STANDARD, buf_size);
 
-    if(arch_disk_read_sector(part->disk, part->lba + lba_offset, sect_count, buf)) panic("disk read sector failed");
+    if(disk_read_sector(part->disk, part->lba + lba_offset, sect_count, buf)) panic("disk read sector failed");
     memcpy(dest, (void *) (buf + sect_offset), count);
 
     pmm_free(buf, buf_size);
