@@ -1,9 +1,12 @@
 #include "dev/dtb.h"
 
+#include "arch/ptm.h"
 #include "common/log.h"
 #include "common/panic.h"
+#include "dev/firmware.h"
 #include "dev/virtio/virtio_mmio.h"
 #include "lib/string.h"
+#include "memory/pmm.h"
 
 #include <smoldtb.h>
 #include <stdbool.h>
@@ -32,19 +35,17 @@ static void dtb_on_error(const char *why) {
     panic("dtb: %s", why);
 }
 
-uintptr_t g_dtb_pointer;
-
-bool arch_dtb_early_init(uintptr_t dtb_pointer) {
+bool dtb_early_init(void *dtb_pointer) {
     dtb_ops ops = {
         .malloc = dtb_malloc,
         .free = dtb_free,
         .on_error = dtb_on_error,
     };
 
-    g_dtb_pointer = dtb_pointer;
-    return dtb_init(dtb_pointer, ops);
+    return dtb_init((uintptr_t) dtb_pointer, ops);
 }
 
+#if defined(__ARCH_RISCV64)
 static void get_cells(dtb_node *parent, size_t *addr_cells, size_t *size_cells) {
     *addr_cells = 2;
     *size_cells = 1;
@@ -72,9 +73,11 @@ static void for_each_reg(dtb_node *child, void (*fn)(uintptr_t base, size_t len)
     dtb_read_prop_2(reg, layout, values);
     for(size_t i = 0; i < pairs; i++) fn(values[i].a, values[i].b);
 }
+#endif
 
-
-void arch_dtb_init() {
+void dtb_init_devices() {
+    // @todo: MOVE DEVICE DISCOVERY SOMEWHERE ELSE
+#if defined(__ARCH_RISCV64)
     dtb_node *soc = dtb_find("/soc");
     for(dtb_node *node = dtb_get_child(soc); node != NULL; node = dtb_get_sibling(node)) {
         dtb_node_stat stat;
@@ -83,8 +86,43 @@ void arch_dtb_init() {
 
         if(string_ncmp(stat.name, "virtio_mmio@", 11) == 0) { for_each_reg(node, virtio_mmio_register); }
     }
+#endif
 }
 
-uintptr_t arch_dtb_get() {
-    return g_dtb_pointer;
+static bool check_padding(uint64_t base, uint64_t length) {
+    uint64_t top = base + length;
+
+    for(size_t i = 0; i < g_pmm_map_size; i++) {
+        pmm_map_entry_t *entry = &g_pmm_map[i];
+        if(entry->base >= top || entry->base + entry->length <= base) { continue; }
+        if(entry->type != PMM_MAP_TYPE_FREE && entry->type != PMM_MAP_TYPE_RESERVED) { return false; }
+    }
+
+    return true;
+}
+
+static void map_table(uintptr_t addr, size_t length) {
+    uint64_t aligned_base = MATH_FLOOR(addr, PTM_PAGE_GRANULARITY);
+    uint64_t aligned_top = MATH_CEIL(addr + length, PTM_PAGE_GRANULARITY);
+
+    if(!check_padding(aligned_base, addr - aligned_base)) { aligned_base = addr; }
+    if(!check_padding(addr + length, aligned_top - (addr + length))) { aligned_base = addr; }
+
+    pmm_map_type_t map_type = -1;
+    for(size_t i = 0; i < g_pmm_map_size; i++) {
+        pmm_map_entry_t *entry = &g_pmm_map[i];
+        if(addr >= entry->base && addr < entry->base + entry->length) {
+            map_type = entry->type;
+            break;
+        }
+    }
+
+    if(map_type == PMM_MAP_TYPE_RESERVED) { pmm_map_set(aligned_base, aligned_top - aligned_base, PMM_MAP_TYPE_DEVICE_TREE, true); }
+}
+
+void dtb_map_device_tree() {
+    uintptr_t address = (uintptr_t) firmware_get_dtb();
+    size_t size = dtb_query_total_size(address);
+
+    map_table(address, size);
 }

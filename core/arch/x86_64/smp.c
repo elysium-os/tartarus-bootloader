@@ -3,6 +3,7 @@
 #include "common/log.h"
 #include "common/panic.h"
 #include "dev/acpi/tables/madt.h"
+#include "dev/firmware.h"
 #include "lib/mem.h"
 #include "memory/heap.h"
 #include "memory/pmm.h"
@@ -39,10 +40,6 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
     madt_t *madt = (madt_t *) acpi_find_table(rsdp, "APIC");
     if(madt == nullptr) panic("ACPI MADT table not present");
 
-    uint8_t bsp_id = x86_64_cpuid(1).ebx >> 24;
-    log(LOG_LEVEL_INFO, "BSP ID: %u", bsp_id);
-    if(bsp_id != x86_64_lapic_id()) panic("Current lapic id does not match BSP id");
-
     size_t apinit_size = (uintptr_t) g_apinit_end - (uintptr_t) g_apinit_start;
     if(apinit_size + sizeof(ap_info_t) > PMM_GRANULARITY) panic("Unable to fit AP initialization code into a page");
     memcpy(g_smp_reserved_init_page, (void *) g_apinit_start, apinit_size);
@@ -77,7 +74,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
                 cpu->lapic_id = lapic_record->lapic_id;
                 cpu->park_address = nullptr;
                 cpu->is_bsp = false;
-                if(lapic_record->lapic_id == bsp_id) {
+                if(lapic_record->lapic_id == firmware_get()->boot_cpu_id) {
                     cpu->is_bsp = true;
                     goto success;
                 }

@@ -45,6 +45,9 @@ typedef enum : uint64_t {
     /// Usable memory used by ACPI Tables
     TARTARUS_MM_TYPE_ACPI_TABLES,
 
+    /// Usable memory used by a device tree
+    TARTARUS_MM_TYPE_DEVICE_TREE,
+
     /// Usable memory used by ACPI
     TARTARUS_MM_TYPE_ACPI_RECLAIMABLE,
 

@@ -5,6 +5,7 @@
 #include "dev/acpi.h"
 #include "dev/acpi/tables/fadt.h"
 #include "dev/acpi/tables/madt.h"
+#include "dev/firmware.h"
 #include "lib/mem.h"
 #include "lib/string.h"
 #include "memory/heap.h"
@@ -70,8 +71,7 @@ static smp_cpu_t *discover_aps() {
 
         cpu->park_address = NULL;
         cpu->is_bsp = false;
-        // see riscv64/opensbi/entry.c for this dumb hack...
-        if(cpu->hartid == ARCH_CSR_READ(sscratch)) {
+        if(cpu->hartid == firmware_get()->boot_cpu_id) {
             cpu->is_bsp = true;
             continue;
         }

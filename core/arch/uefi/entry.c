@@ -3,6 +3,7 @@
 #include "common/panic.h"
 #include "core.h"
 #include "dev/dtb.h"
+#include "dev/firmware.h"
 #include "efi/efierr.h"
 #include "lib/mem.h"
 #include "memory/pmm.h"
@@ -24,20 +25,6 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
 #include "arch/riscv64/sbi.h"
 
 #include <efi/protocol/riscv/efiboot.h>
-static EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
-static bool compare_guid(EFI_GUID *a, EFI_GUID *b) {
-    return memcmp(a, b, sizeof(EFI_GUID)) == 0;
-}
-
-static void *find_dtb(EFI_SYSTEM_TABLE *st) {
-    for(UINTN i = 0; i < st->NumberOfTableEntries; i++) {
-        EFI_CONFIGURATION_TABLE *t = &st->ConfigurationTable[i];
-        if(compare_guid(&t->VendorGuid, &dtb_guid)) return t->VendorTable;
-    }
-    return NULL;
-}
-
-
 static EFI_GUID riscv_boot_guid = RISCV_EFI_BOOT_PROTOCOL_GUID;
 
 static uint32_t get_boot_hartid(EFI_SYSTEM_TABLE *st) {
@@ -67,9 +54,9 @@ static uint32_t get_boot_hartid(EFI_SYSTEM_TABLE *st) {
 #endif
 
 #if defined(__ARCH_RISCV64)
-    void *dtb = find_dtb(system_table);
-    arch_dtb_early_init((uintptr_t) dtb);
-    ARCH_CSR_WRITE(sscratch, get_boot_hartid(system_table));
+    firmware_get()->boot_cpu_id = get_boot_hartid(system_table);
+    firmware_get()->dtb = nullptr;
+    firmware_get()->rsdp = nullptr;
 #endif
 
     arch_cpu_init();

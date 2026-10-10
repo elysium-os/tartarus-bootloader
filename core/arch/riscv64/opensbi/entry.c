@@ -3,6 +3,7 @@
 #include "common/panic.h"
 #include "core.h"
 #include "dev/dtb.h"
+#include "dev/firmware.h"
 #include "lib/string.h"
 #include "memory/pmm.h"
 #include "smoldtb.h"
@@ -62,10 +63,11 @@ void tree_reserve_region(uintptr_t base, size_t len) {
     log(LOG_LEVEL_DEBUG, "tartarus riscv <3");
     log(LOG_LEVEL_DEBUG, "hart = %lu, dtb = 0x%lx", hart_id, dtb_pointer);
 
-    // @todo: work out a better way to store the hart_id, this is really lazy but it works
-    ARCH_CSR_WRITE(sscratch, hart_id);
+    firmware_get()->boot_cpu_id = hart_id;
+    firmware_get()->dtb = (void *) dtb_pointer;
+    firmware_get()->rsdp = 0;
 
-    if(!arch_dtb_early_init(dtb_pointer)) { panic("Failed to init device tree"); }
+    if(!dtb_early_init((void *) dtb_pointer)) { panic("Failed to init device tree"); }
 
     dtb_node *root = dtb_find("/");
 
@@ -87,7 +89,7 @@ void tree_reserve_region(uintptr_t base, size_t len) {
     // Claim tartarus and stack
     pmm_map_set((uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start, PMM_MAP_TYPE_ALLOCATED, true);
 
-    arch_dtb_init();
+    dtb_init_devices();
 
     core();
     arch_cpu_halt();

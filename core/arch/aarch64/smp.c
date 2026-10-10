@@ -5,6 +5,7 @@
 #include "dev/acpi.h"
 #include "dev/acpi/tables/fadt.h"
 #include "dev/acpi/tables/madt.h"
+#include "dev/firmware.h"
 #include "lib/mem.h"
 #include "memory/heap.h"
 #include "memory/pmm.h"
@@ -57,8 +58,6 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
 
     ap_info_t *ap_info = (ap_info_t *) (apinit_page + apinit_size);
 
-    uint64_t bsp_id = AARCH64_CPU_READ_SYSTEM_REG(mpidr_el1) & ~((uint64_t) 1 << 31);
-
     smp_cpu_t *cpus = nullptr;
     for(size_t count = sizeof(madt_t); count < madt->sdt_header.length; count += ((madt_record_t *) ((uintptr_t) madt + count))->length) {
         madt_record_t *record = (madt_record_t *) ((uintptr_t) madt + count);
@@ -83,7 +82,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
                 cpu->mpidr = gicc_record->mpidr;
                 cpu->park_address = nullptr;
                 cpu->is_bsp = false;
-                if(gicc_record->mpidr == bsp_id) {
+                if(gicc_record->mpidr == firmware_get()->boot_cpu_id) {
                     cpu->is_bsp = true;
                     goto success;
                 }
