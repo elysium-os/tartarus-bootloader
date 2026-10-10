@@ -10,9 +10,6 @@
 
 static protocol_t protocols[] = {
     (protocol_t) {.name = "tartarus", .entry = protocol_tartarus},
-#ifdef __ARCH_X86_64
-    (protocol_t) {.name = "linux",    .entry = protocol_linux   },
-#endif
 };
 
 protocol_t *protocol_match(const char *name) {
