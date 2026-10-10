@@ -1,5 +1,4 @@
-#ifdef __ARCH_RISCV64
-#include "common/dtb.h"
+#include "dev/dtb.h"
 
 #include "common/log.h"
 #include "common/panic.h"
@@ -89,4 +88,3 @@ void arch_dtb_init() {
 uintptr_t arch_dtb_get() {
     return g_dtb_pointer;
 }
-#endif

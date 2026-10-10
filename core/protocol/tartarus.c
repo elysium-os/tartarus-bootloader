@@ -20,7 +20,7 @@
 
 // @todo: I'm not a fan of this...
 #if defined(__ARCH_RISCV64)
-#include "common/dtb.h"
+#include "dev/dtb.h"
 #endif
 
 #ifdef __UEFI
