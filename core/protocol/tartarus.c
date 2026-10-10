@@ -7,6 +7,8 @@
 #include "common/elf.h"
 #include "common/log.h"
 #include "common/panic.h"
+#include "dev/dtb.h"
+#include "dev/firmware.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
 #include "lib/mem.h"
@@ -22,7 +24,7 @@
 #include "arch/uefi/uefi.h"
 #endif
 
-#define MAJOR_VERSION 3
+#define MAJOR_VERSION 4
 #define MINOR_VERSION 0
 
 #define BSP_STACK_PGCNT 16
@@ -35,12 +37,14 @@
 [[noreturn]] extern void x86_64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t top_page_table, uint64_t boot_info, uint16_t version);
 #elif __ARCH_AARCH64
 [[noreturn]] extern void aarch64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t ttbr0, uint64_t ttbr1, uint64_t txsz, uint64_t boot_info, uint16_t version);
+#elif __ARCH_RISCV64
+[[noreturn]] extern void riscv64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t satp, uint64_t boot_info, uint16_t version);
+#else
+#error Unimplemented
 #endif
 
 [[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel_node, fb_t *fb) {
     log(LOG_LEVEL_INFO, "Tartarus Protocol Version %u.%u", MAJOR_VERSION, MINOR_VERSION);
-
-    ptm_address_space_t *address_space = arch_ptm_create_address_space();
 
     // Find ACPI
     acpi_rsdp_t *rsdp = nullptr;
@@ -50,6 +54,15 @@
         arch_acpi_map_tables(rsdp);
     }
     log(LOG_LEVEL_INFO, "RSDP found at %#lx", (uintptr_t) rsdp);
+
+    // Find device tree
+    void *dtb = nullptr;
+    dtb = firmware_get_dtb();
+    if(dtb == nullptr) log(LOG_LEVEL_WARN, "could not locate device tree");
+    dtb_map_device_tree();
+    log(LOG_LEVEL_INFO, "Device tree found at %#lx", (uintptr_t) dtb);
+
+    ptm_address_space_t *address_space = arch_ptm_create_address_space();
 
     // Freeze the memory map
     size_t frozen_map_size = g_pmm_map_size;
@@ -63,6 +76,7 @@
         switch(frozen_map[i].type) {
             case PMM_MAP_TYPE_FREE:
             case PMM_MAP_TYPE_ACPI_TABLES:
+            case PMM_MAP_TYPE_DEVICE_TREE:
             case PMM_MAP_TYPE_ALLOCATED:
             case PMM_MAP_TYPE_EFI_RECLAIMABLE:
             case PMM_MAP_TYPE_ACPI_RECLAIMABLE: break;
@@ -146,8 +160,6 @@
 
     // Allocate stack
     void *stack = pmm_alloc(PMM_AREA_STANDARD, BSP_STACK_PGCNT) + (BSP_STACK_PGCNT * PMM_GRANULARITY);
-
-
     // Prepare SMP init
 #if defined(__UEFI)
     log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
@@ -194,6 +206,7 @@
     }
 
     tartarus_boot_info_t *boot_info = heap_alloc(sizeof(tartarus_boot_info_t));
+    boot_info->device_tree_address = (tartarus_paddr_t) (uintptr_t) dtb;
     boot_info->acpi_rsdp_address = (tartarus_paddr_t) (uintptr_t) rsdp;
     boot_info->bsp_entry_stack_size = BSP_STACK_PGCNT * PMM_GRANULARITY;
     boot_info->ap_entry_stack_size = AP_STACK_PGCNT * PMM_GRANULARITY;
@@ -247,6 +260,7 @@
         switch(g_pmm_map[i].type) {
             case PMM_MAP_TYPE_FREE:             type = TARTARUS_MM_TYPE_USABLE; break;
             case PMM_MAP_TYPE_ACPI_TABLES:      type = TARTARUS_MM_TYPE_ACPI_TABLES; break;
+            case PMM_MAP_TYPE_DEVICE_TREE:      type = TARTARUS_MM_TYPE_DEVICE_TREE; break;
             case PMM_MAP_TYPE_ALLOCATED:        type = TARTARUS_MM_TYPE_BOOTLOADER_RECLAIMABLE; break;
             case PMM_MAP_TYPE_EFI_RECLAIMABLE:  type = TARTARUS_MM_TYPE_EFI_RECLAIMABLE; break;
             case PMM_MAP_TYPE_ACPI_RECLAIMABLE: type = TARTARUS_MM_TYPE_ACPI_RECLAIMABLE; break;
@@ -286,6 +300,8 @@
         HHDM_CAST(uint64_t, boot_info),
         ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION
     );
+#elif __ARCH_RISCV64
+    riscv64_protocol_tartarus_handoff(kernel->entry, HHDM_CAST(void *, stack), (uintptr_t) address_space->satp_value, HHDM_CAST(uint64_t, boot_info), ((uint16_t) MAJOR_VERSION << 8) | MINOR_VERSION);
 #endif
     __builtin_unreachable();
 }

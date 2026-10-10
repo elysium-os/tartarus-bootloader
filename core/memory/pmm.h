@@ -22,6 +22,13 @@
 #define PMM_AREA_LOWMEM PMM_AREA_STANDARD
 #define PMM_AREA_STANDARD ((pmm_map_area_t) {.start = 0, .end = UINTPTR_MAX})
 
+#elif __ARCH_RISCV64
+
+#define PMM_GRANULARITY 0x1000
+
+#define PMM_AREA_CONVENTIONAL PMM_AREA_STANDARD
+#define PMM_AREA_LOWMEM PMM_AREA_STANDARD
+#define PMM_AREA_STANDARD ((pmm_map_area_t) {.start = 0, .end = UINTPTR_MAX})
 #else
 #error Unimplemented
 #endif
@@ -35,6 +42,7 @@ typedef enum {
     PMM_MAP_TYPE_ACPI_RECLAIMABLE,
     PMM_MAP_TYPE_ACPI_NVS,
     PMM_MAP_TYPE_ACPI_TABLES,
+    PMM_MAP_TYPE_DEVICE_TREE,
     PMM_MAP_TYPE_RESERVED,
     PMM_MAP_TYPE_BAD
 } pmm_map_type_t;

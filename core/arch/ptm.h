@@ -33,6 +33,16 @@ typedef struct {
     uint64_t *top_page_tables[2];
 } ptm_address_space_t;
 
+#elif __ARCH_RISCV64
+
+#define PTM_VA_BITS(ADDRESS_SPACE) ((ADDRESS_SPACE)->level_count == 3 ? 39 : (ADDRESS_SPACE)->level_count == 4 ? 48 : 57)
+
+typedef struct {
+    size_t level_count;
+    uint64_t *top_page_table;
+    uint64_t satp_value;
+} ptm_address_space_t;
+
 #else
 #error Unimplemented
 #endif

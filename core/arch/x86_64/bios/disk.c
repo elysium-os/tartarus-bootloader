@@ -1,11 +1,11 @@
 #include "dev/disk.h"
 
-#include "arch/disk.h"
 #include "lib/math.h"
 #include "lib/mem.h"
 #include "memory/heap.h"
 #include "memory/pmm.h"
 
+#include "arch/x86_64/bios/disk.h"
 #include "arch/x86_64/bios/int.h"
 #include "arch/x86_64/tsc.h"
 
@@ -30,6 +30,14 @@ typedef struct [[gnu::packed]] {
     uint16_t sector_size;
     uint32_t edd_address;
 } ext_read_drive_params_t;
+
+static bool bios_disk_read(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest);
+static bool bios_disk_write(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src);
+
+static const disk_ops_t g_bios_disk_ops = {
+    .read_sector = bios_disk_read,
+    .write_sector = bios_disk_write,
+};
 
 static uint16_t estimate_sector_size(uint8_t disk_id, uint8_t test_val) {
     uint8_t *buf = pmm_alloc(PMM_AREA_CONVENTIONAL, 3);
@@ -85,7 +93,7 @@ static uint16_t estimate_optimal_transfer_size(disk_t *disk) {
     return fastest_size;
 }
 
-void arch_disk_initialize() {
+void bios_disk_initialize() {
     for(int i = 0x80; i < 0xFF; i++) {
         ext_read_drive_params_t params = {.size = sizeof(ext_read_drive_params_t)};
         int_regs_t regs = {.eax = (0x48 << 8), .edx = i, .ds = INT_16BIT_SEGMENT(&params), .esi = INT_16BIT_OFFSET(&params)};
@@ -102,14 +110,15 @@ void arch_disk_initialize() {
         disk->sector_size = calculated_sector_size != 0 ? calculated_sector_size : params.sector_size;
         disk->sector_count = params.abs_sectors;
         disk->optimal_transfer_size = 1;
+        disk->ops = &g_bios_disk_ops;
 
         int buf_size = MATH_DIV_CEIL(disk->sector_size, PMM_GRANULARITY);
         void *buf = pmm_alloc(PMM_AREA_CONVENTIONAL, buf_size);
-        if(buf_size == 0 || arch_disk_read_sector(disk, 0, buf_size, buf)) {
+        if(buf_size == 0 || bios_disk_read(disk, 0, buf_size, buf)) {
             heap_free(disk);
             continue;
         }
-        disk->read_only = arch_disk_write_sector(disk, 0, buf_size, buf);
+        disk->read_only = bios_disk_write(disk, 0, buf_size, buf);
         disk->partitions = 0;
         disk_initialize_partitions(disk);
         disk->optimal_transfer_size = estimate_optimal_transfer_size(disk);
@@ -120,7 +129,7 @@ void arch_disk_initialize() {
     }
 }
 
-bool arch_disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
+static bool bios_disk_read(disk_t *disk, uint64_t lba, uint64_t sector_count, void *dest) {
     disk_address_packet_t dap = {.size = sizeof(disk_address_packet_t)};
     int_regs_t regs = {.edx = disk->id, .ds = INT_16BIT_SEGMENT(&dap), .esi = INT_16BIT_OFFSET(&dap)};
     size_t buf_size = MATH_DIV_CEIL(disk->optimal_transfer_size * disk->sector_size, PMM_GRANULARITY);
@@ -145,7 +154,7 @@ bool arch_disk_read_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, vo
     return false;
 }
 
-bool arch_disk_write_sector(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
+static bool bios_disk_write(disk_t *disk, uint64_t lba, uint64_t sector_count, void *src) {
     disk_address_packet_t dap = {
         .size = sizeof(disk_address_packet_t),
         .sector_count = 1,

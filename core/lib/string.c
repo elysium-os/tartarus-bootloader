@@ -17,6 +17,19 @@ bool string_eq(const char *lhs, const char *rhs) {
     return string_cmp(lhs, rhs) == 0;
 }
 
+int string_ncmp(const char *lhs, const char *rhs, size_t size) {
+    for(size_t i = 0; i < size; i++) {
+        unsigned char a = (unsigned char) lhs[i];
+        unsigned char b = (unsigned char) rhs[i];
+
+        if(a != b) return a < b ? -1 : 1;
+
+        if(a == '\0') return 0;
+    }
+
+    return 0;
+}
+
 bool string_case_eq(const char *lhs, const char *rhs) {
     size_t i = 0;
     while(((lhs[i] >= 'A' && lhs[i] <= 'Z') ? (lhs[i] + ('a' - 'A')) : lhs[i]) == ((rhs[i] >= 'A' && rhs[i] <= 'Z') ? (rhs[i] + ('a' - 'A')) : rhs[i]))
