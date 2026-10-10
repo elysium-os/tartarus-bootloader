@@ -51,7 +51,6 @@ static uint32_t get_boot_hartid(EFI_SYSTEM_TABLE *st) {
 #endif
 
 
-static log_sink_t g_sbi_putchar_sink = {.level = LOG_LEVEL_DEBUG, .char_out = sbi_legacy_putc};
 [[noreturn]] EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table) {
     g_uefi_system_table = system_table;
     g_uefi_image_handle = image_handle;
@@ -61,6 +60,7 @@ static log_sink_t g_sbi_putchar_sink = {.level = LOG_LEVEL_DEBUG, .char_out = sb
     log_sink_add(&g_qemu_debug_sink);
 #endif
 #if defined(__ARCH_RISCV64) && defined(__BUILD_DEBUG)
+    static log_sink_t g_sbi_putchar_sink = {.level = LOG_LEVEL_DEBUG, .char_out = sbi_legacy_putc};
     log_sink_add(&g_sbi_putchar_sink);
 #else
     log_sink_add(&g_uefi_log_sink);
