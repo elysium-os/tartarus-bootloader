@@ -58,7 +58,7 @@
     // Find device tree
     void *dtb = nullptr;
     dtb = firmware_get_dtb();
-    if(dtb == NULL) log(LOG_LEVEL_WARN, "could not locate device tree");
+    if(dtb == nullptr) log(LOG_LEVEL_WARN, "could not locate device tree");
     dtb_map_device_tree();
     log(LOG_LEVEL_INFO, "Device tree found at %#lx", (uintptr_t) dtb);
 

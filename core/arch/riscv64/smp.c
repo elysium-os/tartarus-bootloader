@@ -39,7 +39,7 @@ static smp_cpu_t *discover_aps() {
         return nullptr;
     }
 
-    smp_cpu_t *cpus = NULL;
+    smp_cpu_t *cpus = nullptr;
     for(dtb_node *node = dtb_get_child(cpu_node); node; node = dtb_get_sibling(node)) {
         dtb_prop *device_type = dtb_find_prop(node, "device_type");
         if(!device_type) continue;
@@ -69,7 +69,7 @@ static smp_cpu_t *discover_aps() {
         cpu->acpi_id = 0;
         cpu->hartid = hart_id;
 
-        cpu->park_address = NULL;
+        cpu->park_address = nullptr;
         cpu->is_bsp = false;
         if(cpu->hartid == firmware_get()->boot_cpu_id) {
             cpu->is_bsp = true;

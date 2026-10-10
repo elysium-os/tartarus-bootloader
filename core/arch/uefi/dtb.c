@@ -9,7 +9,7 @@ static bool compare_guid(EFI_GUID *a, EFI_GUID *b) {
 void *arch_dtb_find_dtb() {
     EFI_GUID dtb = EFI_DTB_TABLE_GUID;
 
-    void *rsdp = NULL;
+    void *rsdp = nullptr;
     for(UINTN i = 0; i < g_uefi_system_table->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *table = &g_uefi_system_table->ConfigurationTable[i];
 

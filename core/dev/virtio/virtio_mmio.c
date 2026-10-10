@@ -1,4 +1,3 @@
-#ifdef __ARCH_RISCV64
 #include "virtio_mmio.h"
 
 #include "common/log.h"
@@ -6,7 +5,13 @@
 #include "memory/heap.h"
 #include "memory/pmm.h"
 
+#if defined(__ARCH_X86_64)
+#include "arch/x86_64/io.h"
+#elif defined(__ARCH_AARCH64)
+#include "arch/aarch64/io.h"
+#elif defined(__ARCH_RISCV64)
 #include "arch/riscv64/io.h"
+#endif
 
 virtio_mmio_slot_t *g_virtio_mmio_devices;
 
@@ -122,5 +127,3 @@ void virtio_mmio_register(uintptr_t addr, size_t size) {
     slot->next = g_virtio_mmio_devices;
     g_virtio_mmio_devices = slot;
 }
-
-#endif

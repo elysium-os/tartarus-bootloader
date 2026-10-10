@@ -41,7 +41,7 @@ static void for_each_reg(dtb_node *child, void (*fn)(uintptr_t base, size_t len)
         .b = size_cells,
     };
 
-    size_t pairs = dtb_read_prop_2(reg, layout, NULL);
+    size_t pairs = dtb_read_prop_2(reg, layout, nullptr);
     dtb_pair *values = __builtin_alloca(pairs * sizeof(dtb_pair));
 
     dtb_read_prop_2(reg, layout, values);

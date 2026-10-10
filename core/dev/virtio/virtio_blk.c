@@ -1,4 +1,3 @@
-#ifdef __ARCH_RISCV64
 #include "virtio_blk.h"
 
 #include "common/log.h"
@@ -145,7 +144,7 @@ static bool virtio_blk_probe(virtio_mmio_slot_t *slot) {
     disk->common.sector_size = VIRTIO_BLK_SECTOR_SIZE;
     disk->common.sector_count = capacity;
     disk->common.optimal_transfer_size = 1;
-    disk->common.partitions = NULL;
+    disk->common.partitions = nullptr;
 
     virtio_mmio_set_status(slot, status |= VIRTIO_STATUS_DRIVER_OK);
 
@@ -159,9 +158,8 @@ static bool virtio_blk_probe(virtio_mmio_slot_t *slot) {
 }
 
 void virtio_blk_initialize(void) {
-    for(virtio_mmio_slot_t *slot = g_virtio_mmio_devices; slot != NULL; slot = slot->next) {
+    for(virtio_mmio_slot_t *slot = g_virtio_mmio_devices; slot != nullptr; slot = slot->next) {
         if(virtio_mmio_read(slot, VIRTIO_MMIO_DEVICE_ID) != VIRTIO_DEVICE_ID_BLOCK) continue;
         virtio_blk_probe(slot);
     }
 }
-#endif

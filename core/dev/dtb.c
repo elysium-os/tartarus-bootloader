@@ -21,7 +21,7 @@ static size_t g_dtb_arena_used;
 
 static void *dtb_malloc(size_t length) {
     size_t offset = (g_dtb_arena_used + 15) & ~(size_t) 15;
-    if(offset + length > DTB_ARENA_SIZE) return NULL;
+    if(offset + length > DTB_ARENA_SIZE) return nullptr;
     g_dtb_arena_used = offset + length;
     return &g_dtb_arena[offset];
 }
@@ -67,7 +67,7 @@ static void for_each_reg(dtb_node *child, void (*fn)(uintptr_t base, size_t len)
         .b = size_cells,
     };
 
-    size_t pairs = dtb_read_prop_2(reg, layout, NULL);
+    size_t pairs = dtb_read_prop_2(reg, layout, nullptr);
     dtb_pair *values = __builtin_alloca(pairs * sizeof(dtb_pair));
 
     dtb_read_prop_2(reg, layout, values);
@@ -79,7 +79,7 @@ void dtb_init_devices() {
     // @todo: MOVE DEVICE DISCOVERY SOMEWHERE ELSE
 #if defined(__ARCH_RISCV64)
     dtb_node *soc = dtb_find("/soc");
-    for(dtb_node *node = dtb_get_child(soc); node != NULL; node = dtb_get_sibling(node)) {
+    for(dtb_node *node = dtb_get_child(soc); node != nullptr; node = dtb_get_sibling(node)) {
         dtb_node_stat stat;
 
         if(!dtb_stat_node(node, &stat)) continue;

@@ -28,8 +28,8 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
 static EFI_GUID riscv_boot_guid = RISCV_EFI_BOOT_PROTOCOL_GUID;
 
 static uint32_t get_boot_hartid(EFI_SYSTEM_TABLE *st) {
-    RISCV_EFI_BOOT_PROTOCOL *p = NULL;
-    EFI_STATUS s = st->BootServices->LocateProtocol(&riscv_boot_guid, NULL, (void **) &p);
+    RISCV_EFI_BOOT_PROTOCOL *p = nullptr;
+    EFI_STATUS s = st->BootServices->LocateProtocol(&riscv_boot_guid, nullptr, (void **) &p);
     if(s != EFI_SUCCESS) panic("Failed to locate RISCV_EFI_BOOT_PROTOCOL");
     UINTN hartid;
     if(p->GetBootHartId(p, &hartid) != EFI_SUCCESS) panic("Failed to get boot hart id");
