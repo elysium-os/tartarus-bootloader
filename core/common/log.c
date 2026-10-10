@@ -4,11 +4,11 @@
 
 #include <stddef.h>
 
-static log_sink_t *g_sinks = NULL;
+static log_sink_t *g_sinks = nullptr;
 
 static void internal_fmt_list(log_level_t level, const char *fmt, va_list list) {
     va_list local_list;
-    for(log_sink_t *sink = g_sinks; sink != NULL; sink = sink->next) {
+    for(log_sink_t *sink = g_sinks; sink != nullptr; sink = sink->next) {
         if(level > sink->level) continue;
         va_copy(local_list, list);
         format(sink->char_out, fmt, local_list);
@@ -44,7 +44,7 @@ void log_sink_remove(log_sink_t *sink) {
         return;
     }
 
-    for(log_sink_t *cur = g_sinks; sink != NULL; sink = sink->next) {
+    for(log_sink_t *cur = g_sinks; sink != nullptr; sink = sink->next) {
         if(cur->next != sink) continue;
         cur->next = sink->next;
         break;

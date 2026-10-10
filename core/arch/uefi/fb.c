@@ -9,8 +9,8 @@ fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict
     EFI_STATUS status;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-    status = g_uefi_system_table->BootServices->LocateProtocol(&gop_guid, NULL, (void **) &gop);
-    if(EFI_ERROR(status)) return NULL;
+    status = g_uefi_system_table->BootServices->LocateProtocol(&gop_guid, nullptr, (void **) &gop);
+    if(EFI_ERROR(status)) return nullptr;
 
     bool closest_found = false;
     UINTN closest = 0;
@@ -32,9 +32,9 @@ fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict
         closest_difference = difference;
         closest = i;
     }
-    if(!closest_found) return NULL;
+    if(!closest_found) return nullptr;
     status = gop->SetMode(gop, closest);
-    if(EFI_ERROR(status)) return NULL;
+    if(EFI_ERROR(status)) return nullptr;
 
     fb_t *fb = heap_alloc(sizeof(fb_t));
     fb->address = gop->Mode->FrameBufferBase;

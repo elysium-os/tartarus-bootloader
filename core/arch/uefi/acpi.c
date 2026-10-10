@@ -18,7 +18,7 @@ void *arch_acpi_find_rsdp() {
     EFI_GUID v1 = ACPI_TABLE_GUID;
     EFI_GUID v2 = ACPI_20_TABLE_GUID;
 
-    void *rsdp = NULL;
+    void *rsdp = nullptr;
     for(UINTN i = 0; i < g_uefi_system_table->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *table = &g_uefi_system_table->ConfigurationTable[i];
 

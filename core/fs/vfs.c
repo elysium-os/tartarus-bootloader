@@ -24,7 +24,7 @@ vfs_node_t *vfs_lookup(vfs_t *vfs, const char *path) {
                 current_node = current_node->ops->lookup(current_node, component);
                 heap_free(component);
 
-                if(current_node == NULL) return NULL;
+                if(current_node == nullptr) return nullptr;
                 break;
         }
     } while(path[comp_end++]);

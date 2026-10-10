@@ -37,7 +37,7 @@ void *g_smp_reserved_init_page;
 
 smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, uint64_t stack_pgcnt, uint64_t hhdm_offset) {
     madt_t *madt = (madt_t *) acpi_find_table(rsdp, "APIC");
-    if(madt == NULL) panic("ACPI MADT table not present");
+    if(madt == nullptr) panic("ACPI MADT table not present");
 
     uint8_t bsp_id = x86_64_cpuid(1).ebx >> 24;
     log(LOG_LEVEL_INFO, "BSP ID: %u", bsp_id);
@@ -54,7 +54,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
     ap_info->set_nx = g_x86_64_cpu_nx_support;
     ap_info->set_la57 = g_x86_64_cpu_la57_support;
 
-    smp_cpu_t *cpus = NULL;
+    smp_cpu_t *cpus = nullptr;
     for(size_t count = sizeof(madt_t); count < madt->sdt_header.length; count += ((madt_record_t *) ((uintptr_t) madt + count))->length) {
         madt_record_t *record = (madt_record_t *) ((uintptr_t) madt + count);
         switch(record->type) {
@@ -75,7 +75,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
                 cpu->init_failed = false;
                 cpu->acpi_id = lapic_record->acpi_processor_id;
                 cpu->lapic_id = lapic_record->lapic_id;
-                cpu->park_address = NULL;
+                cpu->park_address = nullptr;
                 cpu->is_bsp = false;
                 if(lapic_record->lapic_id == bsp_id) {
                     cpu->is_bsp = true;

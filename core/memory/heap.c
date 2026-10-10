@@ -15,20 +15,20 @@ typedef struct heap_entry {
     struct heap_entry *next, *last;
 } heap_entry_t;
 
-heap_entry_t *g_heap = NULL;
+heap_entry_t *g_heap = nullptr;
 
 static void delete(heap_entry_t *entry) {
     if(g_heap == entry) g_heap = entry->next;
-    if(entry->last != NULL) entry->last->next = entry->next;
-    if(entry->next != NULL) entry->next->last = entry->last;
-    entry->next = NULL;
-    entry->last = NULL;
+    if(entry->last != nullptr) entry->last->next = entry->next;
+    if(entry->next != nullptr) entry->next->last = entry->last;
+    entry->next = nullptr;
+    entry->last = nullptr;
 }
 
 static void insert(heap_entry_t *entry) {
-    entry->last = NULL;
+    entry->last = nullptr;
     entry->next = g_heap;
-    if(g_heap != NULL) g_heap->last = entry;
+    if(g_heap != nullptr) g_heap->last = entry;
     g_heap = entry;
 }
 
@@ -41,7 +41,7 @@ static void alloc(int pages) {
 void *heap_alloc(size_t size) {
     size = MATH_CEIL(size, 8);
 
-    for(heap_entry_t *current_entry = g_heap; current_entry != NULL; current_entry = current_entry->next) {
+    for(heap_entry_t *current_entry = g_heap; current_entry != nullptr; current_entry = current_entry->next) {
         if(current_entry->size < size) continue;
 
         size_t left = current_entry->size - size;
@@ -62,7 +62,7 @@ void *heap_alloc(size_t size) {
 
 void *heap_realloc(void *ptr, size_t new_size) {
     void *new_ptr = heap_alloc(new_size);
-    if(ptr == NULL) return new_ptr;
+    if(ptr == nullptr) return new_ptr;
     heap_entry_t *entry = (heap_entry_t *) ((uintptr_t) ptr - sizeof(heap_entry_t));
     memcpy(new_ptr, ptr, new_size > entry->size ? entry->size : new_size);
     heap_free(ptr);
@@ -70,8 +70,10 @@ void *heap_realloc(void *ptr, size_t new_size) {
 }
 
 void heap_free(void *address) {
+    if(address == nullptr) return;
+
     heap_entry_t *entry = (heap_entry_t *) ((uintptr_t) address - sizeof(heap_entry_t));
-    for(heap_entry_t *current_entry = g_heap; current_entry != NULL; current_entry = current_entry->next) {
+    for(heap_entry_t *current_entry = g_heap; current_entry != nullptr; current_entry = current_entry->next) {
         if((uintptr_t) current_entry + sizeof(heap_entry_t) + current_entry->size == (uintptr_t) entry) {
             delete(current_entry);
             current_entry->size += entry->size + sizeof(heap_entry_t);

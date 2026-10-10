@@ -39,7 +39,7 @@ static config_entry_t *find_entry(config_t *config, config_entry_type_t type, co
         }
         return &config->entries[i];
     }
-    return NULL;
+    return nullptr;
 }
 
 static token_t read_token(buffer_t *buffer) {
@@ -88,7 +88,7 @@ static token_t read_token(buffer_t *buffer) {
 config_t *config_parse(vfs_node_t *config_node) {
     config_t *config = heap_alloc(sizeof(config_t));
     config->entry_count = 0;
-    config->entries = NULL;
+    config->entries = nullptr;
 
     size_t config_size = config_node->ops->get_size(config_node);
     char *buffer_data = heap_alloc(config_size);
@@ -160,7 +160,7 @@ config_t *config_parse(vfs_node_t *config_node) {
 
 size_t config_key_count(config_t *config, const char *key, config_entry_type_t type) {
     size_t count = 0;
-    while(find_entry(config, type, key, count) != NULL) count++;
+    while(find_entry(config, type, key, count) != nullptr) count++;
     return count;
 }
 
@@ -170,7 +170,7 @@ const char *config_find_string(config_t *config, const char *key, const char *de
 
 const char *config_find_string_at(config_t *config, const char *key, const char *default_value, size_t index) {
     config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_STRING, key, index);
-    if(entry == NULL) return default_value;
+    if(entry == nullptr) return default_value;
     return entry->value.string;
 }
 
@@ -180,7 +180,7 @@ uintmax_t config_find_number(config_t *config, const char *key, uintmax_t defaul
 
 uintmax_t config_find_number_at(config_t *config, const char *key, uintmax_t default_value, size_t index) {
     config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_NUMBER, key, index);
-    if(entry == NULL) return default_value;
+    if(entry == nullptr) return default_value;
     return entry->value.number;
 }
 
@@ -190,6 +190,6 @@ bool config_find_bool(config_t *config, const char *key, bool default_value) {
 
 bool config_find_bool_at(config_t *config, const char *key, bool default_value, size_t index) {
     config_entry_t *entry = find_entry(config, CONFIG_ENTRY_TYPE_BOOLEAN, key, index);
-    if(entry == NULL) return default_value;
+    if(entry == nullptr) return default_value;
     return entry->value.boolean;
 }

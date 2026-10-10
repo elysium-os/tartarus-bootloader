@@ -232,7 +232,7 @@ static int parse_entry(directory_entry_t *entry, char *lfn, char *name) {
 }
 
 static vfs_node_t *node_lookup(vfs_node_t *node, char *name) {
-    if(NODE_DATA(node)->type != NODE_TYPE_DIR && NODE_DATA(node)->type != NODE_TYPE_ROOT) return NULL;
+    if(NODE_DATA(node)->type != NODE_TYPE_DIR && NODE_DATA(node)->type != NODE_TYPE_ROOT) return nullptr;
 
     char lfn[MAX_FILENAME_LENGTH + 1];
     bool next = false;
@@ -240,8 +240,7 @@ static vfs_node_t *node_lookup(vfs_node_t *node, char *name) {
         directory_entry_t entry;
         for(uint16_t i = 0; i < FS_DATA(node->vfs)->fat_meta.root_dir_entry_count; i++) {
             disk_read(FS_DATA(node->vfs)->partition, ROOT_OFFSET(FS_DATA(node->vfs)) + (i * sizeof(directory_entry_t)), sizeof(directory_entry_t), &entry);
-            if(!next) switch(parse_entry(&entry, lfn, name))
-                {
+            if(!next) switch(parse_entry(&entry, lfn, name)) {
                     case DIR_PARSE_LAST:       goto exit1;
                     case DIR_PARSE_NOT_FOUND:  continue;
                     case DIR_PARSE_FOUND:      break;
@@ -250,7 +249,7 @@ static vfs_node_t *node_lookup(vfs_node_t *node, char *name) {
             return create_node(node->vfs, DIR_ENTRY_IS_DIRECTORY(&entry) ? NODE_TYPE_DIR : NODE_TYPE_FILE, entry.cluster_low, entry.file_size);
         }
     exit1:
-        return NULL;
+        return nullptr;
     }
 
     directory_entry_t *entries = heap_alloc(FS_DATA(node->vfs)->fat_meta.cluster_size);
@@ -259,8 +258,7 @@ static vfs_node_t *node_lookup(vfs_node_t *node, char *name) {
         if(CLUSTER_IS_BAD(cluster, FS_DATA(node->vfs)->fat_meta.type)) panic("bad FAT cluster");
         disk_read(FS_DATA(node->vfs)->partition, DATA_OFFSET(FS_DATA(node->vfs)) + (cluster - 2) * FS_DATA(node->vfs)->fat_meta.cluster_size, FS_DATA(node->vfs)->fat_meta.cluster_size, entries);
         for(unsigned int i = 0; i < FS_DATA(node->vfs)->fat_meta.cluster_size / sizeof(directory_entry_t); i++) {
-            if(!next) switch(parse_entry(&entries[i], lfn, name))
-                {
+            if(!next) switch(parse_entry(&entries[i], lfn, name)) {
                     case DIR_PARSE_LAST:       goto exit2;
                     case DIR_PARSE_NOT_FOUND:  continue;
                     case DIR_PARSE_FOUND:      break;
@@ -276,7 +274,7 @@ static vfs_node_t *node_lookup(vfs_node_t *node, char *name) {
 
 exit2:
     heap_free(entries);
-    return NULL;
+    return nullptr;
 }
 
 static size_t node_read(vfs_node_t *node, void *dest, size_t offset, size_t count) {
@@ -385,5 +383,5 @@ valid_cluster_size:
 
 invalid:
     heap_free(bpb);
-    return NULL;
+    return nullptr;
 }

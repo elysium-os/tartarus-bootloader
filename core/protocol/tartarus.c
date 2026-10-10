@@ -43,10 +43,10 @@
     ptm_address_space_t *address_space = arch_ptm_create_address_space();
 
     // Find ACPI
-    acpi_rsdp_t *rsdp = NULL;
+    acpi_rsdp_t *rsdp = nullptr;
     if(config_find_bool(config, "find_rsdp", true)) {
         rsdp = arch_acpi_find_rsdp();
-        if(rsdp == NULL) log(LOG_LEVEL_WARN, "could not locate ACPI RSDP");
+        if(rsdp == nullptr) log(LOG_LEVEL_WARN, "could not locate ACPI RSDP");
         arch_acpi_map_tables(rsdp);
     }
     log(LOG_LEVEL_INFO, "RSDP found at %#lx", (uintptr_t) rsdp);
@@ -87,7 +87,7 @@
     heap_free(frozen_map);
 
     // Map the framebuffer into the HHDM
-    if(fb != NULL) {
+    if(fb != nullptr) {
         log(LOG_LEVEL_DEBUG,
             "Mapping framebuffer %#llx -> %#llx [%#llx]",
             MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
@@ -106,22 +106,22 @@
     // Load kernel
     log(LOG_LEVEL_INFO, "Loading kernel");
     elf_loaded_image_t *kernel = elf_load(kernel_node, address_space);
-    if(kernel == NULL) panic("failed to load kernel");
+    if(kernel == nullptr) panic("failed to load kernel");
     log(LOG_LEVEL_INFO, "Kernel loaded (entry=%#llx)", kernel->entry);
 
     // Load modules
     size_t module_count = config_key_count(config, "module", CONFIG_ENTRY_TYPE_STRING);
     tartarus_module_t *modules = heap_alloc(sizeof(tartarus_module_t) * module_count);
     for(size_t i = 0, j = 0; j < module_count; i++) {
-        const char *module_path = config_find_string_at(config, "module", NULL, i);
-        if(module_path == NULL) {
+        const char *module_path = config_find_string_at(config, "module", nullptr, i);
+        if(module_path == nullptr) {
         skip_module:
             modules = heap_realloc(modules, sizeof(tartarus_module_t) * --module_count);
             continue;
         }
 
         vfs_node_t *module_node = vfs_lookup(kernel_node->vfs, module_path);
-        if(module_node == NULL) {
+        if(module_node == nullptr) {
             log(LOG_LEVEL_WARN, "Module %s not found", module_path);
             goto skip_module;
         }
@@ -155,7 +155,7 @@
 #endif
 
     // Initialize SMP
-    smp_cpu_t *cpus = NULL;
+    smp_cpu_t *cpus = nullptr;
     if(config_find_bool(config, "smp", true)) {
         cpus = smp_initialize_aps(rsdp, address_space, AP_STACK_PGCNT, HHDM_OFFSET);
         log(LOG_LEVEL_INFO, "Initialized SMP");
@@ -175,8 +175,8 @@
         kernel_segments[i].size = kernel->regions[i]->aligned_size;
     }
 
-    tartarus_framebuffer_t *framebuffer = NULL;
-    if(fb != NULL) {
+    tartarus_framebuffer_t *framebuffer = nullptr;
+    if(fb != nullptr) {
         framebuffer = heap_alloc(sizeof(tartarus_framebuffer_t));
         framebuffer->vaddr = HHDM_CAST(void *, fb->address);
         framebuffer->paddr = fb->address;
@@ -201,12 +201,12 @@
     boot_info->hhdm_size = hhdm_size;
     boot_info->kernel_segment_count = kernel->count;
     boot_info->kernel_segments = HHDM_CAST(tartarus_kernel_segment_t *, kernel_segments);
-    boot_info->framebuffer_count = framebuffer != NULL ? 1 : 0;
+    boot_info->framebuffer_count = framebuffer != nullptr ? 1 : 0;
     boot_info->framebuffers = HHDM_CAST(tartarus_framebuffer_t *, framebuffer);
     boot_info->module_count = module_count;
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
-    if(cpus != NULL) {
+    if(cpus != nullptr) {
         uint8_t cpu_count = 0;
         for(smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
 

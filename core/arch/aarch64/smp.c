@@ -40,10 +40,10 @@ extern int64_t apinit_hvc(uint64_t mpidr, uint64_t entry, uint64_t context);
 
 smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, uint64_t stack_pgcnt, uint64_t hhdm_offset) {
     madt_t *madt = (madt_t *) acpi_find_table(rsdp, "APIC");
-    if(madt == NULL) panic("ACPI MADT table not present");
+    if(madt == nullptr) panic("ACPI MADT table not present");
 
     fadt_t *fadt = (fadt_t *) acpi_find_table(rsdp, "FACP");
-    if(fadt == NULL) panic("ACPI FADT table not present");
+    if(fadt == nullptr) panic("ACPI FADT table not present");
 
     if(fadt->sdt_header.length < sizeof(fadt_t) || (fadt->arm_boot_arch & PSCI_COMPLIANT) == 0) panic("No supported method to bring up APs");
 
@@ -59,7 +59,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
 
     uint64_t bsp_id = AARCH64_CPU_READ_SYSTEM_REG(mpidr_el1) & ~((uint64_t) 1 << 31);
 
-    smp_cpu_t *cpus = NULL;
+    smp_cpu_t *cpus = nullptr;
     for(size_t count = sizeof(madt_t); count < madt->sdt_header.length; count += ((madt_record_t *) ((uintptr_t) madt + count))->length) {
         madt_record_t *record = (madt_record_t *) ((uintptr_t) madt + count);
         switch(record->type) {
@@ -81,7 +81,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
                 cpu->init_failed = false;
                 cpu->acpi_id = gicc_record->acpi_processor_id;
                 cpu->mpidr = gicc_record->mpidr;
-                cpu->park_address = NULL;
+                cpu->park_address = nullptr;
                 cpu->is_bsp = false;
                 if(gicc_record->mpidr == bsp_id) {
                     cpu->is_bsp = true;

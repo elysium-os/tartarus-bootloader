@@ -17,7 +17,7 @@ log_sink_t g_uefi_log_sink = {.level = LOG_LEVEL_DEBUG, .char_out = uefi_char_ou
 
 void uefi_bootservices_exit() {
     UINTN umap_size = 0;
-    EFI_MEMORY_DESCRIPTOR *umap = NULL;
+    EFI_MEMORY_DESCRIPTOR *umap = nullptr;
     UINTN map_key;
     UINTN descriptor_size;
     UINT32 descriptor_version;

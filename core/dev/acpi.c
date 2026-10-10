@@ -9,9 +9,9 @@
 #include <stddef.h>
 
 acpi_sdt_header_t *acpi_find_table(acpi_rsdp_t *rsdp, const char *signature) {
-    if(rsdp == NULL) {
+    if(rsdp == nullptr) {
         log(LOG_LEVEL_ERROR, "acpi: RSDP is NULL");
-        return NULL;
+        return nullptr;
     }
     int entry_count;
     bool extended = false;
@@ -36,7 +36,7 @@ acpi_sdt_header_t *acpi_find_table(acpi_rsdp_t *rsdp, const char *signature) {
         }
         if(match) return sdt;
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -72,7 +72,7 @@ void map_table(uintptr_t addr, size_t length) {
 }
 
 void arch_acpi_map_tables(acpi_rsdp_t *rsdp) {
-    if(rsdp == NULL) {
+    if(rsdp == nullptr) {
         log(LOG_LEVEL_ERROR, "acpi: RSDP is NULL");
         return;
     }
@@ -115,7 +115,7 @@ void arch_acpi_map_tables(acpi_rsdp_t *rsdp) {
     }
 
     acpi_sdt_header_t *fadt = acpi_find_table(rsdp, "FACP");
-    if(fadt == NULL) {
+    if(fadt == nullptr) {
         log(LOG_LEVEL_WARN, "acpi: FADT table not found");
         return;
     }

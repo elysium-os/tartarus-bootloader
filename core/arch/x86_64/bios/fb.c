@@ -93,7 +93,7 @@ fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict
 
     int_regs_t regs = {.eax = 0x4F00, .es = INT_16BIT_SEGMENT(&vbe_info), .edi = INT_16BIT_OFFSET(&vbe_info)};
     int_exec(0x10, &regs);
-    if((regs.eax & 0xFFFF) != 0x4F) return NULL;
+    if((regs.eax & 0xFFFF) != 0x4F) return nullptr;
     bool closest_found = false;
     uint16_t closest = 0;
     uint64_t closest_diff = UINT64_MAX;
@@ -119,13 +119,13 @@ fb_t *arch_fb_acquire(uint32_t target_width, uint32_t target_height, bool strict
         closest_diff = diff;
         closest = mode;
     }
-    if(!closest_found) return NULL;
+    if(!closest_found) return nullptr;
 
     memset(&regs, 0, sizeof(int_regs_t));
     regs.eax = 0x4F02;
     regs.ebx = closest | USE_LFB;
     int_exec(0x10, &regs);
-    if((regs.eax & 0xFFFF) != 0x4F) return NULL;
+    if((regs.eax & 0xFFFF) != 0x4F) return nullptr;
 
     get_mode_info(closest, &mode_info);
 

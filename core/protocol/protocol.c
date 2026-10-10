@@ -20,5 +20,5 @@ protocol_t *protocol_match(const char *name) {
         if(!string_eq(protocols[i].name, name)) continue;
         return &protocols[i];
     }
-    return NULL;
+    return nullptr;
 }

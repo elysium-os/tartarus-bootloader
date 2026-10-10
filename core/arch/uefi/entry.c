@@ -30,7 +30,7 @@ static log_sink_t g_qemu_debug_sink = {.level = LOG_LEVEL_DEBUG, .char_out = qem
 
     // Initialize physical memory
     UINTN map_size = 0;
-    EFI_MEMORY_DESCRIPTOR *map = NULL;
+    EFI_MEMORY_DESCRIPTOR *map = nullptr;
     UINTN map_key;
     UINTN descriptor_size;
     UINT32 descriptor_version;

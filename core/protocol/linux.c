@@ -301,7 +301,7 @@ static_assert(sizeof(boot_params_t) == PMM_GRANULARITY);
 
     // RSDP
     acpi_rsdp_t *rsdp = arch_acpi_find_rsdp();
-    if(rsdp == NULL) panic("linux_protocol: could not locate RSDP");
+    if(rsdp == nullptr) panic("linux_protocol: could not locate RSDP");
 
     // Validate linux signature
     uint32_t signature;
@@ -366,21 +366,21 @@ static_assert(sizeof(boot_params_t) == PMM_GRANULARITY);
         if(boot_params->setup_header.relocatable_kernel == 0) panic("linux_protocol: unrelocatable kernel cannot be loaded at %#lx", kernel_address);
 
         kernel_address = pmm_alloc_ext(PMM_AREA_STANDARD, MATH_DIV_CEIL(kernel_size, PMM_GRANULARITY), boot_params->setup_header.kernel_alignment, PMM_MAP_TYPE_ALLOCATED);
-        if(kernel_address == NULL) {
+        if(kernel_address == nullptr) {
             if((1 << boot_params->setup_header.min_alignment) > PMM_GRANULARITY) panic("linux_protocol: unsupported minimum kernel alignment");
             boot_params->setup_header.kernel_alignment = PMM_GRANULARITY;
             kernel_address = pmm_alloc_ext(PMM_AREA_STANDARD, MATH_DIV_CEIL(kernel_size, PMM_GRANULARITY), boot_params->setup_header.kernel_alignment, PMM_MAP_TYPE_ALLOCATED);
         }
-        if(kernel_address == NULL) panic("linux_protocol: failed to allocate kernel");
+        if(kernel_address == nullptr) panic("linux_protocol: failed to allocate kernel");
     }
     if(kernel_node->ops->read(kernel_node, kernel_address, real_mode_kernel_size, kernel_size) != kernel_size) panic("linux_protocol: failed to load kernel");
     log(LOG_LEVEL_INFO, "Loaded kernel at %#lx", kernel_address);
 
     // Load ramdisk
-    const char *ramdisk_path = config_find_string(config, "initrd", NULL);
-    if(ramdisk_path != NULL) {
+    const char *ramdisk_path = config_find_string(config, "initrd", nullptr);
+    if(ramdisk_path != nullptr) {
         vfs_node_t *ramdisk_node = vfs_lookup(kernel_node->vfs, ramdisk_path);
-        if(ramdisk_node == NULL) panic("linux_protocol: initrd not present at \"%s\"", ramdisk_path);
+        if(ramdisk_node == nullptr) panic("linux_protocol: initrd not present at \"%s\"", ramdisk_path);
 
         size_t ramdisk_size = ramdisk_node->ops->get_size(ramdisk_node);
         size_t ramdisk_pages = MATH_DIV_CEIL(ramdisk_size, PMM_GRANULARITY);

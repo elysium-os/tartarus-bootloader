@@ -160,22 +160,22 @@ static bool read_header(vfs_node_t *file, elf64_header_t *header) {
 
 elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
     elf64_header_t header;
-    if(!read_header(file, &header)) return NULL;
+    if(!read_header(file, &header)) return nullptr;
 
     elf64_addr_t lowest_vaddr = UINT64_MAX;
     elf64_addr_t highest_vaddr = 0;
 
-    elf_region_t **regions = NULL;
+    elf_region_t **regions = nullptr;
     size_t region_count = 0;
 
-    region_load_t **loads = NULL;
+    region_load_t **loads = nullptr;
     size_t load_count = 0;
 
     for(elf64_half_t i = 0; i < header.program_header_entry_count; i++) {
         elf64_program_header_t program_header;
         if(file->ops->read(file, &program_header, header.program_header_offset + header.program_header_entry_size * i, header.program_header_entry_size) != header.program_header_entry_size) {
             log(LOG_LEVEL_WARN, "elf: unable to read program header %u", i);
-            return NULL;
+            return nullptr;
         }
         if(program_header.type != PT_LOAD || program_header.memsz == 0) continue;
 
@@ -185,7 +185,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
         for(size_t j = 0; j < region_count; j++) {
             if(aligned_vaddr < regions[j]->aligned_vaddr + regions[j]->aligned_size && regions[j]->aligned_vaddr < aligned_vaddr + aligned_size) {
                 log(LOG_LEVEL_WARN, "elf: program headers (%u and %lu) are sharing a page", i, j);
-                return NULL;
+                return nullptr;
             }
         }
 
@@ -234,7 +234,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
         if(file->ops->read(file, addr, loads[i]->offset, loads[i]->size) != loads[i]->size) {
             pmm_free(paddr, page_count);
             log(LOG_LEVEL_WARN, "elf: unable to load program segment %u", loads[i]->region_index);
-            return NULL;
+            return nullptr;
         }
 
         heap_free(loads[i]);
@@ -249,7 +249,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
     }
 #endif
 
-    if(loads != NULL) heap_free(loads);
+    if(loads != nullptr) heap_free(loads);
 
     elf_loaded_image_t *image = heap_alloc(sizeof(elf_loaded_image_t));
     image->paddr = (uintptr_t) paddr;

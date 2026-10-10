@@ -37,33 +37,33 @@
     // Initialize disks
     arch_disk_initialize();
     int disk_count = 0;
-    for(disk_t *disk = g_disks; disk != NULL; disk = disk->next) disk_count++;
+    for(disk_t *disk = g_disks; disk != nullptr; disk = disk->next) disk_count++;
     log(LOG_LEVEL_INFO, "Initialized %i disks", disk_count);
 
     // Load config
-    vfs_node_t *config_node = NULL;
-    for(disk_t *disk = g_disks; disk != NULL; disk = disk->next) {
-        for(disk_part_t *partition = disk->partitions; partition != NULL; partition = partition->next) {
+    vfs_node_t *config_node = nullptr;
+    for(disk_t *disk = g_disks; disk != nullptr; disk = disk->next) {
+        for(disk_part_t *partition = disk->partitions; partition != nullptr; partition = partition->next) {
             vfs_t *fat_fs = fat_initialize(partition);
-            if(fat_fs == NULL) continue;
+            if(fat_fs == nullptr) continue;
             vfs_node_t *node = vfs_lookup(fat_fs, "/tartarus.cfg");
-            if(node == NULL) continue;
+            if(node == nullptr) continue;
             config_node = node;
         }
     }
-    if(config_node == NULL) panic("could not locate a config file");
+    if(config_node == nullptr) panic("could not locate a config file");
     config_t *config = config_parse(config_node);
     log(LOG_LEVEL_INFO, "Config loaded (%u:%u)", config_node->vfs->partition->disk->id, config_node->vfs->partition->id);
 
     // Find kernel
-    const char *kernel_path = config_find_string(config, "kernel", NULL);
-    if(kernel_path == NULL) panic("no kernel path provided in config");
+    const char *kernel_path = config_find_string(config, "kernel", nullptr);
+    if(kernel_path == nullptr) panic("no kernel path provided in config");
 
     vfs_node_t *kernel_node = vfs_lookup(config_node->vfs, kernel_path);
-    if(kernel_node == NULL) panic("kernel not present at \"%s\"", kernel_path);
+    if(kernel_node == nullptr) panic("kernel not present at \"%s\"", kernel_path);
 
     // Acquire framebuffer
-    fb_t *fb = NULL;
+    fb_t *fb = nullptr;
     bool retrieve_fb = config_find_bool(config, "fb", true);
     if(retrieve_fb) {
         uintmax_t fbw = config_find_number(config, "fb_width", 1920);
@@ -78,13 +78,13 @@
         }
     }
 
-    const char *protocol_name = config_find_string(config, "protocol", NULL);
-    if(protocol_name == NULL) panic("config provides no boot protocol");
+    const char *protocol_name = config_find_string(config, "protocol", nullptr);
+    if(protocol_name == nullptr) panic("config provides no boot protocol");
 
     log(LOG_LEVEL_INFO, "Using protocol: %s", protocol_name);
 
     protocol_t *protocol = protocol_match(protocol_name);
-    if(protocol == NULL) panic("invalid boot protocol");
+    if(protocol == nullptr) panic("invalid boot protocol");
 
     protocol->entry(config, kernel_node, fb);
 
