@@ -5,3 +5,5 @@
 void *heap_alloc(size_t size);
 void *heap_realloc(void *ptr, size_t size);
 void heap_free(void *address);
+
+char *heap_strdup(const char *str);

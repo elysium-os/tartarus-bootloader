@@ -1,17 +1,15 @@
 #include "arch/fb.h"
 #include "arch/smp.h"
-#include "common/config.h"
 #include "common/log.h"
 #include "common/panic.h"
+#include "config/config.h"
 #include "dev/discovery.h"
 #include "dev/disk.h"
 #include "fs/fat.h"
 #include "fs/vfs.h"
-#include "lib/string.h"
+#include "memory/heap.h"
 #include "memory/pmm.h"
 #include "protocol/protocol.h"
-
-#include "arch/x86_64/cpu.h"
 
 #include <stddef.h>
 
@@ -52,41 +50,36 @@
         }
     }
     if(config_node == nullptr) panic("could not locate a config file");
-    config_t *config = config_parse(config_node);
+
+    size_t config_size = config_node->ops->get_size(config_node);
+    char *buffer_data = heap_alloc(config_size);
+    if(config_node->ops->read(config_node, buffer_data, 0, config_size) != config_size) panic("failed to read config");
+    config_load(buffer_data, config_size);
+    heap_free(buffer_data);
+
     log(LOG_LEVEL_INFO, "Config loaded (%u:%u)", config_node->vfs->partition->disk->id, config_node->vfs->partition->id);
 
     // Find kernel
-    const char *kernel_path = config_find_string(config, "kernel", nullptr);
-    if(kernel_path == nullptr) panic("no kernel path provided in config");
-
+    const char *kernel_path = g_config.boot_entries[g_config_selected_entry].kernel;
     vfs_node_t *kernel_node = vfs_lookup(config_node->vfs, kernel_path);
     if(kernel_node == nullptr) panic("kernel not present at \"%s\"", kernel_path);
 
     // Acquire framebuffer
-    fb_t *fb = nullptr;
-    bool retrieve_fb = config_find_bool(config, "fb", true);
-    if(retrieve_fb) {
-        uintmax_t fbw = config_find_number(config, "fb_width", 1920);
-        uintmax_t fbh = config_find_number(config, "fb_height", 1080);
-        bool strict_rgb = config_find_bool(config, "fb_strict_rgb", false);
-        log(LOG_LEVEL_INFO, "Requesting framebuffer for resolution %llux%llu", fbw, fbh);
+    size_t fbw = g_config.framebuffer_width;
+    size_t fbh = g_config.framebuffer_height;
+    log(LOG_LEVEL_INFO, "Requesting framebuffer for resolution %llux%llu", fbw, fbh);
 
-        if((fb = arch_fb_acquire(fbw, fbh, strict_rgb))) {
-            log(LOG_LEVEL_INFO, "Got framebuffer with resolution %ux%u", fb->width, fb->height);
-        } else {
-            log(LOG_LEVEL_WARN, "Failed to acquire framebuffer");
-        }
+    fb_t *fb = nullptr;
+    if((fb = arch_fb_acquire(fbw, fbh, g_config.framebuffer_strict_rgb))) {
+        log(LOG_LEVEL_INFO, "Got framebuffer with resolution %ux%u", fb->width, fb->height);
+    } else {
+        log(LOG_LEVEL_WARN, "Failed to acquire framebuffer");
     }
 
-    const char *protocol_name = config_find_string(config, "protocol", nullptr);
-    if(protocol_name == nullptr) panic("config provides no boot protocol");
-
-    log(LOG_LEVEL_INFO, "Using protocol: %s", protocol_name);
-
-    protocol_t *protocol = protocol_match(protocol_name);
-    if(protocol == nullptr) panic("invalid boot protocol");
-
-    protocol->entry(config, kernel_node, fb);
+    // Handoff to protocol
+    switch(g_config.boot_entries[g_config_selected_entry].protocol) {
+        case PROTOCOL_TARTARUS: protocol_tartarus(&g_config.boot_entries[g_config_selected_entry].protocol_tartarus, kernel_node, fb); break;
+    }
 
     __builtin_unreachable();
 }

@@ -3,8 +3,10 @@
 #include "common/panic.h"
 #include "lib/math.h"
 #include "lib/mem.h"
+#include "lib/string.h"
 #include "memory/pmm.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define MINIMUM_ENTRY_SIZE 8
@@ -87,4 +89,12 @@ void heap_free(void *address) {
         }
     }
     insert(entry);
+}
+
+char *heap_strdup(const char *str) {
+    size_t length = string_length(str);
+    char *dupstr = heap_alloc(length + 1);
+    memcpy(dupstr, str, length);
+    dupstr[length] = '\0';
+    return dupstr;
 }

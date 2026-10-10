@@ -3,7 +3,6 @@
 #include "arch/ptm.h"
 #include "arch/smp.h"
 #include "arch/time.h"
-#include "common/config.h"
 #include "common/elf.h"
 #include "common/log.h"
 #include "common/panic.h"
@@ -15,6 +14,7 @@
 #include "lib/string.h"
 #include "memory/heap.h"
 #include "memory/pmm.h"
+#include "protocol/protocol.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -43,17 +43,17 @@
 #error Unimplemented
 #endif
 
-[[noreturn]] void protocol_tartarus(config_t *config, vfs_node_t *kernel_node, fb_t *fb) {
+[[noreturn]] void protocol_tartarus(protocol_tartarus_config_t *config, vfs_node_t *kernel_node, fb_t *fb) {
     log(LOG_LEVEL_INFO, "Tartarus Protocol Version %u.%u", MAJOR_VERSION, MINOR_VERSION);
 
     // Find ACPI
-    acpi_rsdp_t *rsdp = nullptr;
-    if(config_find_bool(config, "find_rsdp", true)) {
-        rsdp = arch_acpi_find_rsdp();
-        if(rsdp == nullptr) log(LOG_LEVEL_WARN, "could not locate ACPI RSDP");
+    acpi_rsdp_t *rsdp = arch_acpi_find_rsdp();
+    if(rsdp == nullptr) {
+        log(LOG_LEVEL_WARN, "Could not locate ACPI RSDP");
+    } else {
         arch_acpi_map_tables(rsdp);
+        log(LOG_LEVEL_INFO, "RSDP found at %#lx", (uintptr_t) rsdp);
     }
-    log(LOG_LEVEL_INFO, "RSDP found at %#lx", (uintptr_t) rsdp);
 
     // Find device tree
     void *dtb = nullptr;
@@ -124,13 +124,12 @@
     log(LOG_LEVEL_INFO, "Kernel loaded (entry=%#llx)", kernel->entry);
 
     // Load modules
-    size_t module_count = config_key_count(config, "module", CONFIG_ENTRY_TYPE_STRING);
-    tartarus_module_t *modules = heap_alloc(sizeof(tartarus_module_t) * module_count);
-    for(size_t i = 0, j = 0; j < module_count; i++) {
-        const char *module_path = config_find_string_at(config, "module", nullptr, i);
+    tartarus_module_t *modules = heap_alloc(sizeof(tartarus_module_t) * config->module_count);
+    for(size_t i = 0, j = 0; j < config->module_count; i++) {
+        const char *module_path = config->module_paths[i];
         if(module_path == nullptr) {
         skip_module:
-            modules = heap_realloc(modules, sizeof(tartarus_module_t) * --module_count);
+            modules = heap_realloc(modules, sizeof(tartarus_module_t) * --config->module_count);
             continue;
         }
 
@@ -160,6 +159,7 @@
 
     // Allocate stack
     void *stack = pmm_alloc(PMM_AREA_STANDARD, BSP_STACK_PGCNT) + (BSP_STACK_PGCNT * PMM_GRANULARITY);
+
     // Prepare SMP init
 #if defined(__UEFI)
     log(LOG_LEVEL_INFO, "Exiting UEFI bootservices");
@@ -168,7 +168,7 @@
 
     // Initialize SMP
     smp_cpu_t *cpus = nullptr;
-    if(config_find_bool(config, "smp", true)) {
+    if(config->enable_smp) {
         cpus = smp_initialize_aps(rsdp, address_space, AP_STACK_PGCNT, HHDM_OFFSET);
         log(LOG_LEVEL_INFO, "Initialized SMP");
     }
@@ -216,7 +216,7 @@
     boot_info->kernel_segments = HHDM_CAST(tartarus_kernel_segment_t *, kernel_segments);
     boot_info->framebuffer_count = framebuffer != nullptr ? 1 : 0;
     boot_info->framebuffers = HHDM_CAST(tartarus_framebuffer_t *, framebuffer);
-    boot_info->module_count = module_count;
+    boot_info->module_count = config->module_count;
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
     if(cpus != nullptr) {

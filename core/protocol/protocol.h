@@ -1,12 +1,16 @@
 #pragma once
 
 #include "arch/fb.h"
-#include "common/config.h"
 #include "fs/vfs.h"
 
-typedef struct {
-    const char *name;
-    void (*entry)(config_t *config, vfs_node_t *kernel_node, fb_t *fb);
+typedef enum {
+    PROTOCOL_TARTARUS
 } protocol_t;
 
-protocol_t *protocol_match(const char *name);
+typedef struct {
+    size_t module_count;
+    char **module_paths;
+    bool enable_smp;
+} protocol_tartarus_config_t;
+
+[[noreturn]] void protocol_tartarus(protocol_tartarus_config_t *config, vfs_node_t *kernel_node, fb_t *fb);
