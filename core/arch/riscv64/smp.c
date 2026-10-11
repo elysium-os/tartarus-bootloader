@@ -66,7 +66,6 @@ static smp_cpu_t *discover_aps() {
         cpu->init_failed = false;
 
         // @todo: what do we do on non-acpi platforms
-        cpu->acpi_id = 0;
         cpu->hartid = hart_id;
 
         cpu->park_address = nullptr;

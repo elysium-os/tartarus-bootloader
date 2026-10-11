@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 typedef struct smp_cpu {
-    uint32_t acpi_id;
 #ifdef __ARCH_X86_64
     uint8_t lapic_id;
 #elif __ARCH_AARCH64

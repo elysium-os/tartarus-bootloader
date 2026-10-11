@@ -70,7 +70,6 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
                 cpus = cpu;
 
                 cpu->init_failed = false;
-                cpu->acpi_id = lapic_record->acpi_processor_id;
                 cpu->lapic_id = lapic_record->lapic_id;
                 cpu->park_address = nullptr;
                 cpu->is_bsp = false;
