@@ -111,7 +111,7 @@ void config_load(const char *data, size_t data_length) {
         tcfg_value_t *strict_rgb = tcfg_object_get_field(fb->object, "strict_rgb");
         if(strict_rgb != nullptr) {
             if(strict_rgb->type != TCFG_VALUE_TYPE_BOOLEAN) panic("Config Error: Invalid value for `framebuffer.strict_rgb`");
-            config.framebuffer_strict_rgb = strict_rgb;
+            config.framebuffer_strict_rgb = strict_rgb->boolean;
         }
 
         tcfg_value_t *width = tcfg_object_get_field(fb->object, "width");
