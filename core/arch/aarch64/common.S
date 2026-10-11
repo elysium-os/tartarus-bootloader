@@ -67,7 +67,7 @@
 .endm
 
 .macro ERET_TO_EL1 scratch_reg, address, from
-    // SPSR_EL2.M=EL1h, SPSR_EL2.F=1, SPSR_EL2.I=1, SPSR_EL2.A=1, SPSR_EL2.D=1
+    // SPSR_EL2.M=EL1t, SPSR_EL2.F=1, SPSR_EL2.I=1, SPSR_EL2.A=1, SPSR_EL2.D=1
     mov \scratch_reg, #0b0100 | (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9)
     msr spsr_\from, \scratch_reg
 
