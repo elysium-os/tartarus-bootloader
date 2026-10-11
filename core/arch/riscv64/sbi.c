@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-inline sbiret_t sbi_call(long eid, long fid, long a0, long a1, long a2) {
+static inline sbiret_t sbi_call(long eid, long fid, long a0, long a1, long a2) {
     register long r0 asm("a0") = a0;
     register long r1 asm("a1") = a1;
     register long r2 asm("a2") = a2;
