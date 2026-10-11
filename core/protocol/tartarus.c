@@ -32,6 +32,7 @@
 
 #define HHDM_OFFSET 0xFFFF800000000000
 #define HHDM_CAST(TYPE, ADDRESS) ((__TARTARUS_PTR(TYPE))((uint64_t) (uintptr_t) (ADDRESS) + HHDM_OFFSET))
+#define HHDM_CAST_NULLABLE(TYPE, ADDRESS) ((ADDRESS) == nullptr ? (__TARTARUS_PTR(TYPE)) 0 : HHDM_CAST(TYPE, ADDRESS))
 
 #ifdef __ARCH_X86_64
 [[noreturn]] extern void x86_64_protocol_tartarus_handoff(uint64_t entry, __TARTARUS_PTR(void *) stack, uint64_t top_page_table, uint64_t boot_info, uint16_t version);
@@ -215,7 +216,7 @@
     boot_info->kernel_segment_count = kernel->count;
     boot_info->kernel_segments = HHDM_CAST(tartarus_kernel_segment_t *, kernel_segments);
     boot_info->framebuffer_count = framebuffer != nullptr ? 1 : 0;
-    boot_info->framebuffers = HHDM_CAST(tartarus_framebuffer_t *, framebuffer);
+    boot_info->framebuffers = HHDM_CAST_NULLABLE(tartarus_framebuffer_t *, framebuffer);
     boot_info->module_count = config->module_count;
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
