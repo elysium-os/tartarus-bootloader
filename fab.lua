@@ -93,12 +93,12 @@ local linker_script = nil
 
 -- Build Types
 if options.build_type == "debug" then
-    table.insert(flags.c, "-O3")
+    table.extend(flags.c, { "-O0", "-g" })
     table.insert(defines, "__BUILD_DEBUG")
 end
 
 if options.build_type == "release" then
-    table.extend(flags.c, { "-O0", "-g" })
+    table.insert(flags.c, "-O3")
     table.insert(defines, "__BUILD_RELEASE")
 end
 
