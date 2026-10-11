@@ -62,15 +62,13 @@ g_apinit_start:
     ERET_TO_EL1 x11, x10, el2
 
 .parked:
-    wfi
-    b .parked
-
     ldar x10, [x4]
-    cbnz x4, .enter
+    cbnz x10, .enter
     yield
     b .parked
 
 .enter:
+    ldr x0, [x4, #8]
     ERET_TO_EL1 x11, x10, el1
 
 .balign 8

@@ -92,7 +92,7 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
                 ap_info->txsz = 64 - PTM_VA_BITS(address_space);
                 ap_info->hhdm_offset = hhdm_offset;
                 ap_info->ttbr0 = (uintptr_t) address_space->top_page_tables[0];
-                ap_info->ttbr0 = (uintptr_t) address_space->top_page_tables[1];
+                ap_info->ttbr1 = (uintptr_t) address_space->top_page_tables[1];
                 ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, stack_pgcnt) + (PMM_GRANULARITY * stack_pgcnt) + hhdm_offset;
                 ap_info->park_address = (uintptr_t) cpu->park_address;
 
