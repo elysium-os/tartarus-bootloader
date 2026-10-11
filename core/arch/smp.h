@@ -25,4 +25,5 @@ typedef struct smp_cpu {
 extern void *g_smp_reserved_init_page;
 #endif
 
-smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, uint64_t stack_pgcnt, uint64_t hhdm_offset);
+smp_cpu_t *smp_discover_cpus();
+void smp_initialize_aps(smp_cpu_t *cpu_list, ptm_address_space_t *address_space, uint64_t stack_pgcnt, uint64_t hhdm_offset);

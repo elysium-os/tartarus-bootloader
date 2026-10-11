@@ -36,10 +36,7 @@ extern nullptr_t g_apinit_end[];
 
 void *g_smp_reserved_init_page;
 
-smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, uint64_t stack_pgcnt, uint64_t hhdm_offset) {
-    madt_t *madt = (madt_t *) acpi_find_table(rsdp, "APIC");
-    if(madt == nullptr) panic("ACPI MADT table not present");
-
+void smp_initialize_aps(smp_cpu_t *cpu_list, ptm_address_space_t *address_space, uint64_t stack_pgcnt, uint64_t hhdm_offset) {
     size_t apinit_size = (uintptr_t) g_apinit_end - (uintptr_t) g_apinit_start;
     if(apinit_size + sizeof(ap_info_t) > PMM_GRANULARITY) panic("Unable to fit AP initialization code into a page");
     memcpy(g_smp_reserved_init_page, (void *) g_apinit_start, apinit_size);
@@ -51,63 +48,40 @@ smp_cpu_t *smp_initialize_aps(void *rsdp, ptm_address_space_t *address_space, ui
     ap_info->set_nx = g_x86_64_cpu_nx_support;
     ap_info->set_la57 = g_x86_64_cpu_la57_support;
 
-    smp_cpu_t *cpus = nullptr;
-    for(size_t count = sizeof(madt_t); count < madt->sdt_header.length; count += ((madt_record_t *) ((uintptr_t) madt + count))->length) {
-        madt_record_t *record = (madt_record_t *) ((uintptr_t) madt + count);
-        switch(record->type) {
-            case MADT_LAPIC:
-                if(record->length < sizeof(madt_record_lapic_t)) {
-                    log(LOG_LEVEL_WARN, "Found MADT LAPIC record that is shorter than expected (%#x/%#x)", record->length, sizeof(madt_record_lapic_t));
-                    continue;
-                }
+    for(smp_cpu_t *cpu = cpu_list; cpu; cpu = cpu->next) {
+        if(cpu->is_bsp) continue;
 
-                madt_record_lapic_t *lapic_record = (madt_record_lapic_t *) record;
+        log(LOG_LEVEL_INFO, "Initializing cpu [lapic id %u]", cpu_list->lapic_id);
+        cpu->park_address = heap_alloc(sizeof(uint64_t) + sizeof(uint64_t));
+        *cpu->park_address = 0;
 
-                log(LOG_LEVEL_INFO, "Initializing cpu [lapic id %u]", lapic_record->lapic_id);
+        ap_info->init = 0;
+        ap_info->lapic_id = cpu->lapic_id;
+        ap_info->park_address = (uintptr_t) cpu->park_address;
+        ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, stack_pgcnt) + (PMM_GRANULARITY * stack_pgcnt) + hhdm_offset;
 
-                smp_cpu_t *cpu = heap_alloc(sizeof(smp_cpu_t));
-                cpu->next = cpus;
-                cpus = cpu;
+        asm volatile("" : : : "memory");
 
-                cpu->init_failed = false;
-                cpu->lapic_id = lapic_record->lapic_id;
-                cpu->park_address = nullptr;
-                cpu->is_bsp = false;
-                if(lapic_record->lapic_id == firmware_get()->boot_cpu_id) {
-                    cpu->is_bsp = true;
-                    goto success;
-                }
-                cpu->park_address = heap_alloc(sizeof(uint64_t) + sizeof(uint64_t));
-                *cpu->park_address = 0;
+        x86_64_lapic_ipi_init(cpu->lapic_id);
+        x86_64_tsc_block(CYCLES_10MIL);
+        x86_64_lapic_ipi_startup(cpu->lapic_id, g_smp_reserved_init_page);
 
-                ap_info->init = 0;
-                ap_info->lapic_id = lapic_record->lapic_id;
-                ap_info->park_address = (uintptr_t) cpu->park_address;
-                ap_info->stack = (uintptr_t) pmm_alloc(PMM_AREA_STANDARD, stack_pgcnt) + (PMM_GRANULARITY * stack_pgcnt) + hhdm_offset;
-
-                asm volatile("" : : : "memory");
-
-                x86_64_lapic_ipi_init(lapic_record->lapic_id);
+        if(!cpu->init_failed) {
+            for(int i = 0; i < 1000; i++) {
                 x86_64_tsc_block(CYCLES_10MIL);
-                x86_64_lapic_ipi_startup(lapic_record->lapic_id, g_smp_reserved_init_page);
+                uint8_t value = 0;
+                asm volatile("lock xadd %0, %1" : "+r"(value) : "m"(ap_info->init) : "memory");
+                if(value > 0) goto end;
+            }
+            log(LOG_LEVEL_WARN, "AP timed out");
+            cpu->init_failed = true;
+        }
 
-                for(int i = 0; i < 1000; i++) {
-                    x86_64_tsc_block(CYCLES_10MIL);
-                    uint8_t value = 0;
-                    asm volatile("lock xadd %0, %1" : "+r"(value) : "m"(ap_info->init) : "memory");
-                    if(value > 0) goto success;
-                }
-                log(LOG_LEVEL_WARN, "AP timed out");
-
-                log(LOG_LEVEL_WARN, "Failed to initialize cpu [lapic id %u]", lapic_record->lapic_id);
-                cpu->init_failed = true;
-                break;
-
-            success:
-                log(LOG_LEVEL_INFO, "Successfully initialized cpu [lapic id %u]", lapic_record->lapic_id);
-                break;
-            case MADT_LX2APIC: log(LOG_LEVEL_WARN, "x2APIC not currently supported, ignoring MADT entry"); break;
+    end:
+        if(cpu->init_failed) {
+            log(LOG_LEVEL_WARN, "Failed to initialize cpu [lapic id %u]", cpu->lapic_id);
+        } else {
+            log(LOG_LEVEL_INFO, "Successfully initialized cpu [lapic id %u]", cpu->lapic_id);
         }
     }
-    return cpus;
 }

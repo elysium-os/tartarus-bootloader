@@ -168,9 +168,9 @@
 #endif
 
     // Initialize SMP
-    smp_cpu_t *cpus = nullptr;
+    smp_cpu_t *cpus = smp_discover_cpus();
     if(config->enable_smp) {
-        cpus = smp_initialize_aps(rsdp, address_space, AP_STACK_PGCNT, HHDM_OFFSET);
+        smp_initialize_aps(cpus, address_space, AP_STACK_PGCNT, HHDM_OFFSET);
         log(LOG_LEVEL_INFO, "Initialized SMP");
     }
 
