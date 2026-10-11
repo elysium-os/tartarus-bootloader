@@ -2,6 +2,8 @@
 
 #include "common/log.h"
 #include "common/panic.h"
+#include "dev/acpi/tables/rhct.h"
+#include "dev/firmware.h"
 #include "lib/mem.h"
 #include "lib/string.h"
 #include "memory/heap.h"
@@ -27,11 +29,10 @@
 
 #define PAGE_SIZE_AT_LEVEL(level) ((uint64_t) PTM_PAGE_SIZE_4K << (9 * ((int) (level) - 1)))
 
-static size_t detect_max_level_count() {
-    // @todo: acpi support
+static size_t detect_max_level_count_device_tree() {
     dtb_node *cpus = dtb_find("/cpus");
     if(cpus == nullptr) {
-        panic("fdt: /cpus node not found\n");
+        log(LOG_LEVEL_WARN, "fdt: /cpus node not found\n");
         return 0;
     }
 
@@ -74,9 +75,63 @@ static size_t detect_max_level_count() {
     }
 
     log(LOG_LEVEL_WARN, "could not determine mmu level count from device tree\n");
-    // @todo: fall back to acpi if not found
-    panic("unimplemented...");
     return 0;
+}
+
+static size_t detect_max_level_count_acpi() {
+    rhct_t *rhct = (rhct_t *) acpi_find_table(firmware_get_rdsp(), "RHCT");
+    if(rhct == nullptr) {
+        log(LOG_LEVEL_WARN, "Failed to find RHCT table");
+        return 0;
+    }
+
+    rhct_node_mmu_type_t mmu_type = 0xff;
+
+    size_t base = (size_t) rhct->nodes_offset;
+    for(size_t i = 0; i < rhct->node_count; i++) {
+        rhct_node_t *node = (rhct_node_t *) ((uintptr_t) rhct + base);
+        base += node->length;
+        if(node->type == ACPI_RHCT_ENTRY_TYPE_MMU) {
+            rhct_node_mmu_t *mmu = (rhct_node_mmu_t *) node;
+            mmu_type = mmu->mmu_type;
+            break;
+        }
+    }
+
+    if(mmu_type == ACPI_RHCT_MMU_TYPE_SV57) {
+        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv57\"\n");
+        return 5;
+    }
+    if(mmu_type == ACPI_RHCT_MMU_TYPE_SV48) {
+        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv48\"\n");
+        return 4;
+    }
+    if(mmu_type == ACPI_RHCT_MMU_TYPE_SV39) {
+        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv39\"\n");
+        return 3;
+    }
+    if(mmu_type == 0xff) {
+        log(LOG_LEVEL_WARN, "acpi: mmu-type not found\n");
+        return 0;
+    }
+    log(LOG_LEVEL_WARN, "acpi: unknown mmu-type 0x%lx\n", mmu_type);
+    return 0;
+}
+
+static size_t detect_max_level_count() {
+    size_t level_count = 0;
+
+    if(firmware_get_dtb() != nullptr) {
+        level_count = detect_max_level_count_device_tree();
+        if(level_count != 0) { return level_count; }
+    }
+
+    if(firmware_get_rdsp() != nullptr) {
+        level_count = detect_max_level_count_acpi();
+        if(level_count != 0) { return level_count; }
+    }
+
+    panic("could not determine mmu type count");
 }
 
 ptm_address_space_t *arch_ptm_create_address_space() {

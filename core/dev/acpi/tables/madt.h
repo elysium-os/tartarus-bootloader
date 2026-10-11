@@ -18,7 +18,8 @@ typedef enum {
     MADT_NMI,
     MADT_LAPIC_ADDRESS,
     MADT_LX2APIC = 9,
-    MADT_GICC = 11
+    MADT_GICC = 11,
+    MADT_RINTC = 24
 } madt_record_types_t;
 
 typedef struct [[gnu::packed]] {
@@ -50,3 +51,11 @@ typedef struct [[gnu::packed]] {
     uint64_t mpidr;
     uint8_t processor_power_efficiency_class;
 } madt_record_gicc_t;
+
+typedef struct [[gnu::packed]] {
+    madt_record_t base;
+    uint8_t version;
+    uint8_t rsv0;
+    uint32_t flags;
+    uint64_t hartid;
+} madt_record_rintc_t;

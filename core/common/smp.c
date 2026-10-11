@@ -11,6 +11,8 @@
 #include "smoldtb.h"
 
 #if defined(__ARCH_X86_64)
+#define LAPIC_FLAG_ENABLED (1 << 0)
+
 static inline smp_cpu_t *parse_lapic_entry(madt_record_t *record) {
     if(record->length < sizeof(madt_record_lapic_t)) {
         log(LOG_LEVEL_WARN, "Found MADT LAPIC record that is shorter than expected (%#x/%#x)", record->length, sizeof(madt_record_lapic_t));
@@ -18,6 +20,7 @@ static inline smp_cpu_t *parse_lapic_entry(madt_record_t *record) {
     }
 
     madt_record_lapic_t *lapic_record = (madt_record_lapic_t *) record;
+    if((lapic_record->flags & LAPIC_FLAG_ENABLED) == 0) return nullptr;
 
     smp_cpu_t *cpu = heap_alloc(sizeof(smp_cpu_t));
     cpu->init_failed = false;
@@ -49,6 +52,27 @@ static inline smp_cpu_t *parse_gicc_entry(madt_record_t *record) {
 }
 #endif
 
+#if defined(__ARCH_RISCV64)
+#define RINTC_FLAG_ENABLED (1 << 0)
+
+static inline smp_cpu_t *parse_rintc_entry(madt_record_t *record) {
+    if(record->length < sizeof(madt_record_rintc_t)) {
+        log(LOG_LEVEL_WARN, "Found MADT RINTC record that is shorter than expected (%#x/%#x)", record->length, sizeof(madt_record_rintc_t));
+        return nullptr;
+    }
+
+    madt_record_rintc_t *rintc_record = (madt_record_rintc_t *) record;
+    if((rintc_record->flags & RINTC_FLAG_ENABLED) == 0) return nullptr;
+
+    smp_cpu_t *cpu = heap_alloc(sizeof(smp_cpu_t));
+    cpu->init_failed = false;
+    cpu->park_address = nullptr;
+    cpu->hartid = rintc_record->hartid;
+    cpu->is_bsp = rintc_record->hartid == firmware_get()->boot_cpu_id;
+    return cpu;
+}
+#endif
+
 
 smp_cpu_t *smp_discover_cpus_acpi() {
     madt_t *madt = (madt_t *) acpi_find_table(firmware_get_rdsp(), "APIC");
@@ -68,6 +92,9 @@ smp_cpu_t *smp_discover_cpus_acpi() {
 #endif
 #if defined(__ARCH_AARCH64)
             case MADT_GICC: cpu = parse_gicc_entry(record); break;
+#endif
+#if defined(__ARCH_RISCV64)
+            case MADT_RINTC: cpu = parse_rintc_entry(record); break;
 #endif
         }
 
