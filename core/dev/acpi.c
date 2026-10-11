@@ -68,7 +68,14 @@ void map_table(uintptr_t addr, size_t length) {
         }
     }
 
-    if(map_type != PMM_MAP_TYPE_ACPI_RECLAIMABLE && map_type == PMM_MAP_TYPE_RESERVED) { pmm_map_set(aligned_base, aligned_top - aligned_base, PMM_MAP_TYPE_ACPI_TABLES, true); }
+    switch(map_type) {
+        case PMM_MAP_TYPE_EFI_RECLAIMABLE:
+        case PMM_MAP_TYPE_ACPI_RECLAIMABLE:
+        case PMM_MAP_TYPE_ACPI_TABLES:
+        case PMM_MAP_TYPE_DEVICE_TREE:      break;
+
+        default: pmm_map_set(aligned_base, aligned_top - aligned_base, PMM_MAP_TYPE_ACPI_TABLES, true); break;
+    }
 }
 
 void arch_acpi_map_tables(acpi_rsdp_t *rsdp) {
