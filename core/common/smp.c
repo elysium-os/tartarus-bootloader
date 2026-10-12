@@ -107,11 +107,7 @@ smp_cpu_t *smp_discover_cpus_acpi() {
 }
 
 smp_cpu_t *smp_discover_cpus_device_tree() {
-#if !defined(__ARCH_RISCV64)
-    log(LOG_LEVEL_WARN, "Device tree support for this platform is unimplemented");
-    return nullptr;
-#endif
-
+#if defined(__ARCH_RISCV64)
     smp_cpu_t *cpus = nullptr;
     for(dtb_node *node = dtb_find_compatible(nullptr, "riscv"); node != nullptr; node = dtb_find_compatible(node, "riscv")) {
         dtb_prop *device_type = dtb_find_prop(node, "device_type");
@@ -135,15 +131,10 @@ smp_cpu_t *smp_discover_cpus_device_tree() {
             continue;
         }
 
-
-#if defined(__ARCH_RISCV64)
         dtb_prop *hart_id_prop = dtb_find_prop(node, "reg");
         if(!hart_id_prop) { continue; }
         uint64_t hart_id;
         dtb_read_prop_1(hart_id_prop, 1, &hart_id);
-#else
-        // @todo: I'm unsure if this is the *same* for all platforms
-#endif
 
         smp_cpu_t *cpu = heap_alloc(sizeof(smp_cpu_t));
         cpu->next = cpus;
@@ -151,28 +142,30 @@ smp_cpu_t *smp_discover_cpus_device_tree() {
 
         cpu->init_failed = false;
         cpu->park_address = nullptr;
-#if defined(__ARCH_RISCV64)
         cpu->hartid = hart_id;
         if(cpu->hartid == firmware_get()->boot_cpu_id) {
             cpu->is_bsp = true;
             continue;
         }
-#endif
     }
 
     return cpus;
+#else
+    log(LOG_LEVEL_WARN, "Device tree support for this platform is unimplemented");
+    return nullptr;
+#endif
 }
 
 smp_cpu_t *smp_discover_cpus() {
-    {
-        smp_cpu_t *result = smp_discover_cpus_device_tree();
-        if(result != nullptr) { return result; }
-    }
+    smp_cpu_t *result = nullptr;
 
-    {
-        smp_cpu_t *result = smp_discover_cpus_acpi();
-        if(result != nullptr) { return result; }
-    }
+    result = smp_discover_cpus_device_tree();
+    if(result != nullptr) return result;
 
-    panic("Failed to detect cpu information");
+    result = smp_discover_cpus_acpi();
+    if(result != nullptr) return result;
+
+    log(LOG_LEVEL_WARN, "Failed to detect smp cpu information, will not start APs!");
+
+    return nullptr;
 }
