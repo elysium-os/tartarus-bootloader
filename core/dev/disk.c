@@ -83,7 +83,7 @@ static void initialize_gpt_partitions(disk_t *disk, gpt_header_t *header) {
             disk->partitions = partition;
         }
     } else {
-        log(LOG_LEVEL_WARN, "ignoring drive %#llx (read failed)", (uint64_t) disk->id);
+        log(LOG_LEVEL_WARN, "ignoring drive %#x (read failed)", disk->id);
     }
     pmm_free(buf, buf_size);
 }
@@ -98,10 +98,10 @@ void disk_initialize_partitions(disk_t *disk) {
             disk_read_sector(disk, mbr->entries[0].start_lba, 1, buf);
             initialize_gpt_partitions(disk, (gpt_header_t *) buf);
         } else {
-            log(LOG_LEVEL_WARN, "ignoring drive %#llx because it is partitioned with a legacy MBR", (uint64_t) disk->id);
+            log(LOG_LEVEL_WARN, "ignoring drive %#x because it is partitioned with a legacy MBR", disk->id);
         }
     } else {
-        log(LOG_LEVEL_WARN, "ignoring drive %#llx (read failed)", (uint64_t) disk->id);
+        log(LOG_LEVEL_WARN, "ignoring drive %#x (read failed)", disk->id);
     }
     pmm_free(buf, buf_size);
 }

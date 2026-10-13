@@ -116,7 +116,7 @@ static bool virtio_blk_probe(virtio_mmio_slot_t *slot) {
     uint32_t features_high = virtio_mmio_read_device_features(slot, 1);
 
     if(!(features_high & (1u << (VIRTIO_F_VERSION_1 - 32)))) {
-        log(LOG_LEVEL_WARN, "virtio-blk @ 0x%lx: VIRTIO_F_VERSION_1 not offered", slot->addr);
+        log(LOG_LEVEL_WARN, "virtio-blk @ %#" LOGFMT_XPTR ": VIRTIO_F_VERSION_1 not offered", slot->addr);
         virtio_mmio_set_status(slot, VIRTIO_STATUS_FAILED);
         return false;
     }
@@ -128,14 +128,14 @@ static bool virtio_blk_probe(virtio_mmio_slot_t *slot) {
 
     virtio_mmio_set_status(slot, status |= VIRTIO_STATUS_FEATURES_OK);
     if(!(virtio_mmio_get_status(slot) & VIRTIO_STATUS_FEATURES_OK)) {
-        log(LOG_LEVEL_ERROR, "virtio-blk @ 0x%lx: device rejected our feature set", slot->addr);
+        log(LOG_LEVEL_ERROR, "virtio-blk @ %#" LOGFMT_XPTR ": device rejected our feature set", slot->addr);
         virtio_mmio_set_status(slot, VIRTIO_STATUS_FAILED);
         return false;
     }
 
     virtio_blk_disk_t *disk = heap_alloc(sizeof(virtio_blk_disk_t));
     if(!virtio_mmio_queue_setup(slot, 0, &disk->queue)) {
-        log(LOG_LEVEL_ERROR, "virtio-blk @ 0x%lx: failed to set up request queue", slot->addr);
+        log(LOG_LEVEL_ERROR, "virtio-blk @ %#" LOGFMT_XPTR ": failed to set up request queue", slot->addr);
         heap_free(disk);
         virtio_mmio_set_status(slot, VIRTIO_STATUS_FAILED);
         return false;
@@ -159,7 +159,12 @@ static bool virtio_blk_probe(virtio_mmio_slot_t *slot) {
     disk->common.next = g_disks;
     g_disks = &disk->common;
 
-    log(LOG_LEVEL_INFO, "virtio-blk: drive %u: %lu sectors (%lu KiB)%s", disk->common.id, capacity, (capacity * VIRTIO_BLK_SECTOR_SIZE) / 1024, read_only ? " [read-only]" : "");
+    log(LOG_LEVEL_INFO,
+        "virtio-blk: drive %u: %" LOGFMT_U64 " sectors (%" LOGFMT_U64 " KiB)%s",
+        disk->common.id,
+        capacity,
+        (capacity * VIRTIO_BLK_SECTOR_SIZE) / 1024,
+        read_only ? " [read-only]" : "");
     return true;
 }
 

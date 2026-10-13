@@ -101,14 +101,14 @@ void virtio_mmio_register(uintptr_t addr, size_t size) {
 
     uint32_t magic = virtio_mmio_read(slot, VIRTIO_MMIO_MAGIC_VALUE);
     if(magic != VIRTIO_MMIO_MAGIC) {
-        log(LOG_LEVEL_WARN, "rejecting virtio-mmio @ 0x%lx | invalid magic", addr);
+        log(LOG_LEVEL_WARN, "rejecting virtio-mmio @ %#" LOGFMT_XPTR " | invalid magic", addr);
         heap_free(slot);
         return;
     }
 
     uint32_t version = virtio_mmio_read(slot, VIRTIO_MMIO_VERSION);
     if(version != VIRTIO_MMIO_VERSION_MODERN) {
-        log(LOG_LEVEL_WARN, "rejecting virtio-mmio @ 0x%lx | unsupported version %u (legacy is not supported)", addr, version);
+        log(LOG_LEVEL_WARN, "rejecting virtio-mmio @ 0x%zx | unsupported version %u (legacy is not supported)", addr, version);
         heap_free(slot);
         return;
     }
@@ -117,12 +117,12 @@ void virtio_mmio_register(uintptr_t addr, size_t size) {
     uint32_t vendor_id = virtio_mmio_read(slot, VIRTIO_MMIO_VENDOR_ID);
 
     if(device_id == 0x00) {
-        log(LOG_LEVEL_WARN, "rejecting virtio-mmio @ 0x%lx | placeholder device", addr);
+        log(LOG_LEVEL_WARN, "rejecting virtio-mmio @ %#" LOGFMT_XPTR " | placeholder device", addr);
         heap_free(slot);
         return;
     }
 
-    log(LOG_LEVEL_DEBUG, "registering virtio-mmio device @ 0x%lx, id=0x%04x:0x%04x", addr, vendor_id, device_id);
+    log(LOG_LEVEL_DEBUG, "registering virtio-mmio device @ %#" LOGFMT_XPTR ", id=0x%04x:0x%04x", addr, vendor_id, device_id);
 
     slot->next = g_virtio_mmio_devices;
     g_virtio_mmio_devices = slot;

@@ -25,8 +25,9 @@
 [[noreturn]] void core() {
     log(LOG_LEVEL_INFO, "Tartarus v%u.%u%s", VERSION_MAJOR, VERSION_MINOR, VERSION_TAG);
 
-    for(size_t i = 0; i < g_pmm_map_size; i++) log(LOG_LEVEL_DEBUG, "pmm_map[%lu] = { base: %#llx, length: %#llx, type: %u }", i, g_pmm_map[i].base, g_pmm_map[i].length, g_pmm_map[i].type);
-    log(LOG_LEVEL_INFO, "Loaded physical memory map (%lu entries)", g_pmm_map_size);
+    for(size_t i = 0; i < g_pmm_map_size; i++)
+        log(LOG_LEVEL_DEBUG, "pmm_map[%zu] = { base: %#" LOGFMT_X64 ", length: %#" LOGFMT_X64 ", type: %u }", i, g_pmm_map[i].base, g_pmm_map[i].length, g_pmm_map[i].type);
+    log(LOG_LEVEL_INFO, "Loaded physical memory map (%zu entries)", g_pmm_map_size);
 
 #ifdef __ARCH_X86_64
     g_smp_reserved_init_page = pmm_alloc(PMM_AREA_LOWMEM, 1);
@@ -67,7 +68,7 @@
     // Acquire framebuffer
     size_t fbw = g_config.framebuffer_width;
     size_t fbh = g_config.framebuffer_height;
-    log(LOG_LEVEL_INFO, "Requesting framebuffer for resolution %llux%llu", fbw, fbh);
+    log(LOG_LEVEL_INFO, "Requesting framebuffer for resolution %zux%zu", fbw, fbh);
 
     fb_t *fb = nullptr;
     if((fb = arch_fb_acquire(fbw, fbh, g_config.framebuffer_strict_rgb))) {

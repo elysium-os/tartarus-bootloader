@@ -114,7 +114,7 @@ static size_t detect_max_level_count_acpi() {
         log(LOG_LEVEL_WARN, "acpi: mmu-type not found\n");
         return 0;
     }
-    log(LOG_LEVEL_WARN, "acpi: unknown mmu-type 0x%lx\n", mmu_type);
+    log(LOG_LEVEL_WARN, "acpi: unknown mmu-type %#x\n", mmu_type);
     return 0;
 }
 

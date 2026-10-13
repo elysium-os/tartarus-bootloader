@@ -117,7 +117,7 @@ void arch_acpi_map_tables(acpi_rsdp_t *rsdp) {
     for(int i = 0; i < entry_count; i++) {
         acpi_sdt_header_t *sdt = (acpi_sdt_header_t *) (uintptr_t) (extended ? *(uint64_t *) buffer : *(uint32_t *) buffer);
         buffer += extended ? sizeof(uint64_t) : sizeof(uint32_t);
-        log(LOG_LEVEL_INFO, "acpi: mapping table %c%c%c%c at %#lx", sdt->signature[0], sdt->signature[1], sdt->signature[2], sdt->signature[3], (uintptr_t) sdt);
+        log(LOG_LEVEL_INFO, "acpi: mapping table %c%c%c%c at %#" LOGFMT_XPTR, sdt->signature[0], sdt->signature[1], sdt->signature[2], sdt->signature[3], (uintptr_t) sdt);
         map_table((uintptr_t) sdt, sdt->length);
     }
 

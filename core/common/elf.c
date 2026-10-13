@@ -196,7 +196,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
 
         for(size_t j = 0; j < region_count; j++) {
             if(aligned_vaddr < regions[j]->aligned_vaddr + regions[j]->aligned_size && regions[j]->aligned_vaddr < aligned_vaddr + aligned_size) {
-                log(LOG_LEVEL_WARN, "elf: program headers (%u and %lu) are sharing a page", i, j);
+                log(LOG_LEVEL_WARN, "elf: program headers (%u and %zu) are sharing a page", i, j);
                 return nullptr;
             }
         }
@@ -245,7 +245,7 @@ elf_loaded_image_t *elf_load(vfs_node_t *file, void *address_space) {
 
         if(file->ops->read(file, addr, loads[i]->offset, loads[i]->size) != loads[i]->size) {
             pmm_free(paddr, page_count);
-            log(LOG_LEVEL_WARN, "elf: unable to load program segment %u", loads[i]->region_index);
+            log(LOG_LEVEL_WARN, "elf: unable to load program segment %zu", loads[i]->region_index);
             return nullptr;
         }
 
@@ -302,7 +302,7 @@ size_t elf_read_section(vfs_node_t *file, const char *section_name, void **data)
 
         *data = heap_alloc(section_header.size);
         if(file->ops->read(file, *data, section_header.offset, section_header.size) != section_header.size) {
-            log(LOG_LEVEL_WARN, "elf: failed to read section header `%s` data", shstrtab[section_header.name]);
+            log(LOG_LEVEL_WARN, "elf: failed to read section header `%s` data", &shstrtab[section_header.name]);
             heap_free(*data);
             return 0;
         }

@@ -53,7 +53,7 @@
         log(LOG_LEVEL_WARN, "Could not locate ACPI RSDP");
     } else {
         arch_acpi_map_tables(rsdp);
-        log(LOG_LEVEL_INFO, "RSDP found at %#lx", (uintptr_t) rsdp);
+        log(LOG_LEVEL_INFO, "RSDP found at %" LOGFMT_XPTR, (uintptr_t) rsdp);
     }
 
     // Find device tree
@@ -61,7 +61,7 @@
     dtb = firmware_get_dtb();
     if(dtb == nullptr) log(LOG_LEVEL_WARN, "could not locate device tree");
     dtb_map_device_tree();
-    log(LOG_LEVEL_INFO, "Device tree found at %#lx", (uintptr_t) dtb);
+    log(LOG_LEVEL_INFO, "Device tree found at %#" LOGFMT_XPTR, (uintptr_t) dtb);
 
     ptm_address_space_t *address_space = arch_ptm_create_address_space();
 
@@ -97,17 +97,17 @@
         arch_ptm_map(address_space, base, base, length, PTM_FLAG_READ | PTM_FLAG_WRITE | PTM_FLAG_EXEC);
         arch_ptm_map(address_space, base, HHDM_OFFSET + base, length, PTM_FLAG_READ | PTM_FLAG_WRITE);
     }
-    log(LOG_LEVEL_INFO, "HHDM mapped at offset %#llx (of size %#llx)", HHDM_OFFSET, hhdm_size);
+    log(LOG_LEVEL_INFO, "HHDM mapped at offset %#" LOGFMT_X64 " (of size %#" LOGFMT_X64 ")", HHDM_OFFSET, hhdm_size);
 
     heap_free(frozen_map);
 
     // Map the framebuffer into the HHDM
     if(fb != nullptr) {
         log(LOG_LEVEL_DEBUG,
-            "Mapping framebuffer %#llx -> %#llx [%#llx]",
+            "Mapping framebuffer %#" LOGFMT_XPTR " -> %#" LOGFMT_X64 " [%#" LOGFMT_X64 "]",
             MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY),
-            (uint64_t) MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY) + MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
-            (uint64_t) MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY));
+            MATH_FLOOR(fb->address, PTM_PAGE_GRANULARITY) + MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY),
+            MATH_CEIL(fb->size, PTM_PAGE_GRANULARITY));
 
         arch_ptm_map(
             address_space,
@@ -122,7 +122,7 @@
     log(LOG_LEVEL_INFO, "Loading kernel");
     elf_loaded_image_t *kernel = elf_load(kernel_node, address_space);
     if(kernel == nullptr) panic("failed to load kernel");
-    log(LOG_LEVEL_INFO, "Kernel loaded (entry=%#llx)", kernel->entry);
+    log(LOG_LEVEL_INFO, "Kernel loaded (entry=%#" LOGFMT_X64 ")", kernel->entry);
 
     // Load modules
     tartarus_module_t *modules = heap_alloc(sizeof(tartarus_module_t) * config->module_count);
@@ -155,7 +155,7 @@
         modules[j].size = module_size;
         j += 1;
 
-        log(LOG_LEVEL_INFO, "Loaded module %s at %#lx (of size %#lx)", module_path, (uintptr_t) module_addr, module_size);
+        log(LOG_LEVEL_INFO, "Loaded module %s at %#" LOGFMT_XPTR " (of size %#zx)", module_path, (uintptr_t) module_addr, module_size);
     }
 
     // Allocate stack

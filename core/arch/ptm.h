@@ -9,7 +9,7 @@
 
 #define PTM_PAGE_GRANULARITY PTM_PAGE_SIZE_4K
 
-typedef enum : uint64_t {
+typedef enum {
     PTM_PAGE_SIZE_4K = 0x1000,
     PTM_PAGE_SIZE_2M = 0x200000,
     PTM_PAGE_SIZE_1G = 0x40000000
