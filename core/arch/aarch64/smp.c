@@ -58,7 +58,7 @@ void smp_initialize_aps(smp_cpu_t *cpu_list, ptm_address_space_t *address_space,
 
     for(smp_cpu_t *cpu = cpu_list; cpu; cpu = cpu->next) {
         if(cpu->is_bsp) continue;
-        log(LOG_LEVEL_INFO, "Initializing cpu [mpidr %llu]", cpu->mpidr);
+        log(LOG_LEVEL_INFO, "Initializing cpu [mpidr %lu]", cpu->mpidr);
 
         cpu->park_address = heap_alloc(sizeof(uint64_t) + sizeof(uint64_t));
         *cpu->park_address = 0;
@@ -105,15 +105,15 @@ void smp_initialize_aps(smp_cpu_t *cpu_list, ptm_address_space_t *address_space,
                 case -7: log(LOG_LEVEL_WARN, "PSCI_CPU_ON: not present"); break;
                 case -8: log(LOG_LEVEL_WARN, "PSCI_CPU_ON: disabled"); break;
                 case -9: log(LOG_LEVEL_WARN, "PSCI_CPU_ON: invalid address"); break;
-                default: log(LOG_LEVEL_WARN, "PSCI_CPU_ON: unknown error code %lli", retval); break;
+                default: log(LOG_LEVEL_WARN, "PSCI_CPU_ON: unknown error code %li", retval); break;
             }
         }
 
     end:
         if(cpu->init_failed) {
-            log(LOG_LEVEL_WARN, "Failed to initialize cpu [mpidr %u]", cpu->mpidr);
+            log(LOG_LEVEL_WARN, "Failed to initialize cpu [mpidr %lu]", cpu->mpidr);
         } else {
-            log(LOG_LEVEL_INFO, "Successfully initialized cpu [mpidr %u]", cpu->mpidr);
+            log(LOG_LEVEL_INFO, "Successfully initialized cpu [mpidr %lu]", cpu->mpidr);
         }
     }
 }

@@ -15,7 +15,7 @@
 
 static inline smp_cpu_t *parse_lapic_entry(madt_record_t *record) {
     if(record->length < sizeof(madt_record_lapic_t)) {
-        log(LOG_LEVEL_WARN, "Found MADT LAPIC record that is shorter than expected (%#x/%#x)", record->length, sizeof(madt_record_lapic_t));
+        log(LOG_LEVEL_WARN, "Found MADT LAPIC record that is shorter than expected (%#x/%#zx)", record->length, sizeof(madt_record_lapic_t));
         return nullptr;
     }
 
@@ -36,7 +36,7 @@ static inline smp_cpu_t *parse_lapic_entry(madt_record_t *record) {
 
 static inline smp_cpu_t *parse_gicc_entry(madt_record_t *record) {
     if(record->length < sizeof(madt_record_gicc_t)) {
-        log(LOG_LEVEL_WARN, "Found MADT GICC record that is shorter than expected (%#x/%#x)", record->length, sizeof(madt_record_gicc_t));
+        log(LOG_LEVEL_WARN, "Found MADT GICC record that is shorter than expected (%#x/%#zx)", record->length, sizeof(madt_record_gicc_t));
         return nullptr;
     }
 
