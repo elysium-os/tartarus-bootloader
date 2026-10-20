@@ -64,7 +64,7 @@
     } else {
         dtb_map_device_tree();
     }
-    log(LOG_LEVEL_INFO, "Device tree found at %#lx", (uintptr_t) dtb);
+    log(LOG_LEVEL_INFO, "Device tree found at %" LOGFMT_XPTR, (uintptr_t) dtb);
 
     ptm_address_space_t *address_space = arch_ptm_create_address_space();
 
