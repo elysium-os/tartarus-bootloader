@@ -32,7 +32,7 @@
 static size_t detect_max_level_count_device_tree() {
     dtb_node *cpus = dtb_find("/cpus");
     if(cpus == nullptr) {
-        log(LOG_LEVEL_WARN, "fdt: /cpus node not found\n");
+        log(LOG_LEVEL_WARN, "fdt: /cpus node not found");
         return 0;
     }
 
@@ -56,25 +56,25 @@ static size_t detect_max_level_count_device_tree() {
 
         if(mmu) {
             if(string_eq(mmu, "riscv,sv57")) {
-                log(LOG_LEVEL_DEBUG, "ptm: mmu-type = \"%s\"\n", mmu);
+                log(LOG_LEVEL_DEBUG, "ptm: mmu-type = \"%s\"", mmu);
                 return 5;
             }
             if(string_eq(mmu, "riscv,sv48")) {
-                log(LOG_LEVEL_DEBUG, "ptm: mmu-type = \"%s\"\n", mmu);
+                log(LOG_LEVEL_DEBUG, "ptm: mmu-type = \"%s\"", mmu);
                 return 4;
             }
             if(string_eq(mmu, "riscv,sv39")) {
-                log(LOG_LEVEL_DEBUG, "ptm: mmu-type = \"%s\"\n", mmu);
+                log(LOG_LEVEL_DEBUG, "ptm: mmu-type = \"%s\"", mmu);
                 return 3;
             }
-            log(LOG_LEVEL_DEBUG, "fdt: unknown mmu-type \"%s\"\n", mmu);
+            log(LOG_LEVEL_DEBUG, "fdt: unknown mmu-type \"%s\"", mmu);
             panic("unsupported mmu type");
         }
 
         break;
     }
 
-    log(LOG_LEVEL_WARN, "could not determine mmu level count from device tree\n");
+    log(LOG_LEVEL_WARN, "could not determine mmu level count from device tree");
     return 0;
 }
 
@@ -99,22 +99,22 @@ static size_t detect_max_level_count_acpi() {
     }
 
     if(mmu_type == ACPI_RHCT_MMU_TYPE_SV57) {
-        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv57\"\n");
+        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv57\"");
         return 5;
     }
     if(mmu_type == ACPI_RHCT_MMU_TYPE_SV48) {
-        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv48\"\n");
+        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv48\"");
         return 4;
     }
     if(mmu_type == ACPI_RHCT_MMU_TYPE_SV39) {
-        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv39\"\n");
+        log(LOG_LEVEL_INFO, "acpi: mmu-type = \"riscv,sv39\"");
         return 3;
     }
     if(mmu_type == 0xff) {
-        log(LOG_LEVEL_WARN, "acpi: mmu-type not found\n");
+        log(LOG_LEVEL_WARN, "acpi: mmu-type not found");
         return 0;
     }
-    log(LOG_LEVEL_WARN, "acpi: unknown mmu-type %#x\n", mmu_type);
+    log(LOG_LEVEL_WARN, "acpi: unknown mmu-type %#x", mmu_type);
     return 0;
 }
 
