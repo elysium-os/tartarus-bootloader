@@ -59,9 +59,12 @@
     // Find device tree
     void *dtb = nullptr;
     dtb = firmware_get_dtb();
-    if(dtb == nullptr) log(LOG_LEVEL_WARN, "could not locate device tree");
-    dtb_map_device_tree();
-    log(LOG_LEVEL_INFO, "Device tree found at %#" LOGFMT_XPTR, (uintptr_t) dtb);
+    if(dtb == nullptr) {
+        log(LOG_LEVEL_WARN, "could not locate device tree");
+    } else {
+        dtb_map_device_tree();
+    }
+    log(LOG_LEVEL_INFO, "Device tree found at %#lx", (uintptr_t) dtb);
 
     ptm_address_space_t *address_space = arch_ptm_create_address_space();
 

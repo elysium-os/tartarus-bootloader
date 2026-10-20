@@ -88,6 +88,7 @@ void tree_reserve_region(uintptr_t base, size_t len) {
 
     // Claim tartarus and stack
     pmm_map_set((uintptr_t) ld_tartarus_start, (uintptr_t) ld_tartarus_end - (uintptr_t) ld_tartarus_start, PMM_MAP_TYPE_ALLOCATED, true);
+    pmm_map_set((uintptr_t) dtb_pointer, dtb_query_total_size(dtb_pointer), PMM_MAP_TYPE_DEVICE_TREE, true);
 
     core();
     arch_cpu_halt();
