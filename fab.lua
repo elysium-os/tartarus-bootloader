@@ -2,6 +2,8 @@ local ld = require("ld")
 local c = require("lang_c")
 local nasm = require("lang_nasm")
 
+local project_dir = fab.project_dir
+
 -- Options
 local options = {
     platform = fab.option("platform", {
@@ -23,47 +25,36 @@ local linker = ld.get_linker()
 assert(linker ~= nil, "No viable linker found")
 
 -- Rules
-local objcopy_path = fab.which("llvm-objcopy") or fab.which("objcopy")
-assert(objcopy_path ~= nil, "No viable objcopy found")
+local objcopy_binary = fab.which("llvm-objcopy") or fab.which("objcopy")
+assert(objcopy_binary ~= nil, "No viable objcopy found")
 
-local objcopy_rule = fab.def_rule(
+local objcopy_path = objcopy_binary.path:gsub("@", "@@")
+
+local objcopy_rule = fab.define_rule(
     "objcopy_to_bin",
     objcopy_path .. " -O binary @IN@ @OUT@",
     "Objcopying @IN@ to a binary @OUT@"
 )
 
 -- Common Dependencies
-local freestanding_c_headers = fab.git(
-    "freestanding-c-headers",
-    "https://github.com/osdev0/freestanding-c-hdrs.git",
-    "38fed4e1e3365733ddbfa03b0a28936243ad31e9"
-)
+local freestanding_c_headers = fab.dependency("freestanding-c-headers")
+local cc_runtime = fab.dependency("cc-runtime")
 
-local cc_runtime = fab.git(
-    "cc-runtime",
-    "https://github.com/osdev0/cc-runtime.git",
-    "9891629daf3703d0ddecd295772df7da82ab25b9"
-)
-
-local smoldtb = fab.git(
-    "smoldtb",
-    "https://github.com/DeanoBurrito/smoldtb.git",
-    "72d3f8596fb91244e646944e09dcd93e1be03140"
-)
+local smoldtb = fab.dependency("smoldtb")
 
 -- Common
 local core_sources = sources(
-    fab.glob("core/**/*.c", "!core/arch/**"),
-    path(fab.build_dir(), cc_runtime.path, "src/cc-runtime.c")
+    project_dir:glob("core/**/*.c", "!core/arch/**"),
+    cc_runtime / "src/cc-runtime.c"
 )
 
-local smoldtb_sources = sources(path(fab.build_dir(), smoldtb.path, "smoldtb.c"))
+local smoldtb_sources = sources(smoldtb / "smoldtb.c")
 
 local include_dirs = {
-    c.include_dir("."),
-    c.include_dir("core"),
-    c.include_dir(path(fab.build_dir(), freestanding_c_headers.path, "include")),
-    c.include_dir(path(fab.build_dir(), smoldtb.path))
+    c.include_dir(project_dir),
+    c.include_dir(project_dir / "core"),
+    c.include_dir(freestanding_c_headers / "include"),
+    c.include_dir(smoldtb)
 }
 
 local flags = {
@@ -124,7 +115,7 @@ if architecture == "x86_64" then
         "-zmax-page-size=0x1000"
     })
 
-    table.extend(core_sources, sources(fab.glob("core/arch/x86_64/**/*.{c,asm}", "!core/arch/x86_64/{uefi,bios}/**")))
+    table.extend(core_sources, sources(project_dir:glob("core/arch/x86_64/**/*.{c,asm}", "!core/arch/x86_64/{uefi,bios}/**")))
 
     if firmware == "bios" then
         table.insert(defines, "__PLATFORM_X86_64_BIOS")
@@ -145,9 +136,9 @@ if architecture == "x86_64" then
             "-melf_i386",
         })
 
-        table.extend(core_sources, sources(fab.glob("core/arch/x86_64/bios/**/*.{c,asm}")))
+        table.extend(core_sources, sources(project_dir:glob("core/arch/x86_64/bios/**/*.{c,asm}")))
 
-        linker_script = fab.def_source("core/arch/x86_64/bios/tartarus.ld")
+        linker_script = fab.resolve_source(project_dir / "core/arch/x86_64/bios/tartarus.ld")
     end
 
     if firmware == "uefi" then
@@ -172,7 +163,7 @@ if architecture == "x86_64" then
             "-pie"
         })
 
-        table.extend(core_sources, sources(fab.glob("core/arch/x86_64/uefi/**/*.{c,asm}")))
+        table.extend(core_sources, sources(project_dir:glob("core/arch/x86_64/uefi/**/*.{c,asm}")))
     end
 end
 
@@ -195,7 +186,7 @@ if architecture == "aarch64" then
         "-pie"
     })
 
-    table.extend(core_sources, sources(fab.glob("core/arch/aarch64/**/*.{c,S}")))
+    table.extend(core_sources, sources(project_dir:glob("core/arch/aarch64/**/*.{c,S}")))
 
     if firmware == "uefi" then
         table.insert(defines, "__PLATFORM_AARCH64_UEFI")
@@ -220,14 +211,14 @@ if architecture == "riscv64" then
         "-ztext",
     })
 
-    table.extend(core_sources, sources(fab.glob("core/arch/riscv64/**/*.{c,S}", "!core/arch/riscv64/{uefi,opensbi}/**")))
+    table.extend(core_sources, sources(project_dir:glob("core/arch/riscv64/**/*.{c,S}", "!core/arch/riscv64/{uefi,opensbi}/**")))
 
     if firmware == "opensbi" then
         table.insert(flags.c, "-fno-pic")
 
         table.insert(defines, "__PLATFORM_RISCV64_OPENSBI")
-        table.extend(core_sources, sources(fab.glob("core/arch/riscv64/opensbi/**/*.{c,S}")))
-        linker_script = fab.def_source("core/arch/riscv64/opensbi/tartarus.ld")
+        table.extend(core_sources, sources(project_dir:glob("core/arch/riscv64/opensbi/**/*.{c,S}")))
+        linker_script = fab.resolve_source(project_dir / "core/arch/riscv64/opensbi/tartarus.ld")
     end
 
     if firmware == "uefi" then
@@ -241,22 +232,18 @@ end
 if firmware == "uefi" then
     table.insert(defines, "__UEFI")
 
-    table.extend(core_sources, sources(fab.glob("core/arch/uefi/**/*.c")))
+    table.extend(core_sources, sources(project_dir:glob("core/arch/uefi/**/*.c")))
 
-    local pico_efi = fab.git(
-        "pico-efi",
-        "https://codeberg.org/PicoEFI/PicoEFI.git",
-        "8b79fdaa72ee548a8ea24e3dc4d87bf281312865"
-    )
+    local pico_efi = fab.dependency("pico-efi")
 
-    table.insert(include_dirs, c.include_dir(path(fab.build_dir(), pico_efi.path, "inc")))
+    table.insert(include_dirs, c.include_dir(pico_efi / "inc"))
 
     table.extend(core_sources, sources(
-        path(fab.build_dir(), pico_efi.path, architecture, "reloc.c"),
-        path(fab.build_dir(), pico_efi.path, architecture, "entry.S")
+        pico_efi / architecture / "reloc.c",
+        pico_efi / architecture / "entry.S"
     ))
 
-    linker_script = fab.def_source(path(fab.build_dir(), pico_efi.path, architecture, "link_script.lds"))
+    linker_script = fab.resolve_source(pico_efi / architecture / "link_script.lds")
 end
 
 for _, define in ipairs(defines) do
@@ -286,7 +273,8 @@ if architecture == "x86_64" then
     generators.asm = function(sources) return asmc:generate(sources, flags.asm) end
 
     if firmware == "bios" then
-        install["share/tartarus/x86_64-bios.bin"] = asmc:assemble("x86_64-bios.bin", fab.def_source("boot/x86_64-bios.asm"), { "-f", "bin" })
+        local bootsector = fab.resolve_source(project_dir / "boot/x86_64-bios.asm")
+        install["share/tartarus/x86_64-bios.bin"] = asmc:assemble("x86_64-bios.bin", bootsector, { "-f", "bin" })
     end
 end
 
@@ -312,11 +300,11 @@ if firmware == "opensbi" then
 end
 
 if firmware == "uefi" then
-    install["share/tartarus/tartarus.efi"] = fab.def_rule(
+    install["share/tartarus/tartarus.efi"] = fab.define_rule(
         "postprocess_efi",
-        fab.path_rel("scripts/pad.sh") .. " @IN@ @OUT@ 4096",
+        tostring(project_dir / "scripts/pad.sh") .. " @IN@ @OUT@ 4096",
         "Postprocessing @IN@ to @OUT@"
     ):build("tartarus.efi", { binary }, {})
 end
 
-return { install = install }
+return install

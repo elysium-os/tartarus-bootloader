@@ -1,0 +1,24 @@
+[pico-efi]
+type = "git"
+url = "https://github.com/PicoEFI/PicoEFI.git"
+revision = "8b79fdaa72ee548a8ea24e3dc4d87bf281312865"
+
+[freestanding-c-headers]
+type = "git"
+url = "https://github.com/osdev0/freestanding-c-hdrs.git"
+revision = "38fed4e1e3365733ddbfa03b0a28936243ad31e9"
+
+[cc-runtime]
+type = "git"
+url = "https://github.com/osdev0/cc-runtime.git"
+revision = "9891629daf3703d0ddecd295772df7da82ab25b9"
+
+[smoldtb]
+type = "git"
+url = "https://github.com/DeanoBurrito/smoldtb.git"
+revision = "72d3f8596fb91244e646944e09dcd93e1be03140"
+
+[esh]
+type = "git"
+url = "https://github.com/elysium-os/esh.git"
+revision = "4a78b0e46d5a4fe7ee4c6f52c6ba04ea6b18b73c"
