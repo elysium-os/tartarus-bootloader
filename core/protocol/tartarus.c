@@ -224,7 +224,7 @@
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
     if(cpus != nullptr) {
-        uint8_t cpu_count = 0;
+        size_t cpu_count = 0;
         for(smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
 
         tartarus_cpu_t *cpu_array = heap_alloc(sizeof(tartarus_cpu_t) * cpu_count);
