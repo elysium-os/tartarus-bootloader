@@ -51,7 +51,7 @@ void smp_initialize_aps(smp_cpu_t *cpu_list, ptm_address_space_t *address_space,
     for(smp_cpu_t *cpu = cpu_list; cpu; cpu = cpu->next) {
         if(cpu->is_bsp) continue;
 
-        log(LOG_LEVEL_INFO, "Initializing cpu [lapic id %u]", cpu_list->lapic_id);
+        log(LOG_LEVEL_INFO, "Initializing cpu [lapic id %lu]", cpu_list->lapic_id);
         cpu->park_address = heap_alloc(sizeof(uint64_t) + sizeof(uint64_t));
         *cpu->park_address = 0;
 
@@ -79,9 +79,9 @@ void smp_initialize_aps(smp_cpu_t *cpu_list, ptm_address_space_t *address_space,
 
     end:
         if(cpu->init_failed) {
-            log(LOG_LEVEL_WARN, "Failed to initialize cpu [lapic id %u]", cpu->lapic_id);
+            log(LOG_LEVEL_WARN, "Failed to initialize cpu [lapic id %lu]", cpu->lapic_id);
         } else {
-            log(LOG_LEVEL_INFO, "Successfully initialized cpu [lapic id %u]", cpu->lapic_id);
+            log(LOG_LEVEL_INFO, "Successfully initialized cpu [lapic id %lu]", cpu->lapic_id);
         }
     }
 }
