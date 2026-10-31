@@ -1,18 +1,10 @@
 // Tartarus Bootloader API
-// Protocol Version 3.0
+// Protocol Version 5.0
 
 #ifndef __TARTARUS_BOOTLOADER_HEADER
 #define __TARTARUS_BOOTLOADER_HEADER
 
 #include <stdint.h>
-
-#ifndef __TARTARUS_ARCH_OVERRIDE
-#if defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
-#ifndef __X86_64
-#define __X86_64
-#endif
-#endif
-#endif
 
 #ifdef __TARTARUS_NO_PTR
 #define __TARTARUS_PTR(TYPE) tartarus_vaddr_t
@@ -23,9 +15,6 @@
 #define TARTARUS_KERNEL_SEGMENT_FLAG_READ (1 << 0)
 #define TARTARUS_KERNEL_SEGMENT_FLAG_WRITE (1 << 1)
 #define TARTARUS_KERNEL_SEGMENT_FLAG_EXECUTE (1 << 2)
-
-#define TARTARUS_CPU_FLAG_IS_BSP (1 << 0)
-#define TARTARUS_CPU_FLAG_BOOT_OK (1 << 1)
 
 typedef uint64_t tartarus_paddr_t;
 typedef uint64_t tartarus_vaddr_t;
@@ -68,9 +57,40 @@ typedef struct [[gnu::packed]] {
     tartarus_size_t length;
 } tartarus_mm_entry_t;
 
+/// Describes the state of a CPU
+typedef enum : uint32_t {
+    /// CPU started fine and will jump to the park address when set
+    TARTARUS_CPU_STATE_OK = 0,
+
+    /// CPU failed to boot and is in an unknown state
+    TARTARUS_CPU_STATE_FAILED,
+
+    /// CPU was never started by Tartarus
+    TARTARUS_CPU_STATE_SKIPPED,
+} tartarus_cpu_state_t;
+
+
+/// Describes the role of a CPU
+typedef enum : uint32_t {
+    /// Bootstrap processor
+    TARTARUS_CPU_TYPE_BSP = 0,
+
+    /// Application processor
+    TARTARUS_CPU_TYPE_AP
+} tartarus_cpu_type_t;
+
 /// Describes a CPU
 typedef struct [[gnu::packed]] {
-    uint64_t flags;
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_AMD64) || defined(_M_IX86)
+    uint64_t lapic_id;
+#elif defined(__riscv) && __riscv_xlen == 64
+    uint64_t hart_id;
+#elif defined(__arch64__) || defined(_M_ARM64)
+    uint64_t mpidr;
+#endif
+
+    tartarus_cpu_type_t type;
+    tartarus_cpu_state_t state;
     __TARTARUS_PTR(tartarus_vaddr_t *) park_address;
     __TARTARUS_PTR(uint64_t *) argument;
 } tartarus_cpu_t;
