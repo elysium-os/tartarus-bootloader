@@ -24,7 +24,7 @@
 #include "arch/uefi/uefi.h"
 #endif
 
-#define MAJOR_VERSION 4
+#define MAJOR_VERSION 5
 #define MINOR_VERSION 0
 
 #define BSP_STACK_PGCNT 16
@@ -224,23 +224,34 @@
     boot_info->modules = HHDM_CAST(tartarus_module_t *, modules);
 
     if(cpus != nullptr) {
-        uint8_t cpu_count = 0;
+        size_t cpu_count = 0;
         for(smp_cpu_t *cpu = cpus; cpu; cpu = cpu->next) cpu_count++;
 
         tartarus_cpu_t *cpu_array = heap_alloc(sizeof(tartarus_cpu_t) * cpu_count);
         smp_cpu_t *cpu = cpus;
         for(uint16_t i = 0; i < cpu_count; i++, cpu = cpu->next) {
-            cpu_array[i].flags = 0;
+            cpu_array[i].type = cpu->is_bsp ? TARTARUS_CPU_TYPE_BSP : TARTARUS_CPU_TYPE_AP;
+
+            if(cpu->init_failed) {
+                cpu_array[i].state = TARTARUS_CPU_STATE_FAILED;
+            } else if(!config->enable_smp) {
+                cpu_array[i].state = TARTARUS_CPU_STATE_SKIPPED;
+            } else {
+                cpu_array[i].state = TARTARUS_CPU_STATE_OK;
+            }
+
             cpu_array[i].park_address = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
             cpu_array[i].argument = (__TARTARUS_PTR(uint64_t *)) 0;
 
-            if(cpu->init_failed) continue;
-            cpu_array[i].flags |= TARTARUS_CPU_FLAG_BOOT_OK;
+#if defined(__ARCH_X86_64)
+            cpu_array[i].lapic_id = cpu->lapic_id;
+#elif defined(__ARCH_RISCV64)
+            cpu_array[i].hart_id = cpu->hartid;
+#elif defined(__ARCH_AARCH64)
+            cpu_array[i].mpidr = cpu->mpidr;
+#endif
 
-            if(cpu->is_bsp) {
-                cpu_array[i].flags |= TARTARUS_CPU_FLAG_IS_BSP;
-                continue;
-            };
+            if(cpu->init_failed || cpu->is_bsp) continue;
 
             cpu_array[i].park_address = HHDM_CAST(uint64_t *, cpu->park_address);
             cpu_array[i].argument = HHDM_CAST(uint64_t *, (uintptr_t) cpu->park_address + 8);
@@ -250,7 +261,17 @@
         boot_info->cpus = HHDM_CAST(tartarus_cpu_t *, cpu_array);
     } else {
         tartarus_cpu_t *bsp_cpu = heap_alloc(sizeof(tartarus_cpu_t));
-        bsp_cpu->flags = TARTARUS_CPU_FLAG_BOOT_OK | TARTARUS_CPU_FLAG_IS_BSP;
+        bsp_cpu->type = TARTARUS_CPU_TYPE_BSP;
+        bsp_cpu->state = TARTARUS_CPU_STATE_OK;
+
+#if defined(__ARCH_X86_64)
+        bsp_cpu->lapic_id = firmware_get()->boot_cpu_id;
+#elif defined(__ARCH_RISCV64)
+        bsp_cpu->hart_id = firmware_get()->boot_cpu_id;
+#elif defined(__ARCH_AARCH64)
+        bsp_cpu->mpidr = firmware_get()->boot_cpu_id;
+#endif
+
         bsp_cpu->park_address = (__TARTARUS_PTR(tartarus_vaddr_t *)) 0;
 
         boot_info->cpu_count = 1;

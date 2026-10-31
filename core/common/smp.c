@@ -29,6 +29,23 @@ static inline smp_cpu_t *parse_lapic_entry(madt_record_t *record) {
     cpu->is_bsp = lapic_record->lapic_id == firmware_get()->boot_cpu_id;
     return cpu;
 }
+
+static inline smp_cpu_t *parse_x2apic_entry(madt_record_t *record) {
+    if(record->length < sizeof(madt_record_x2apic_t)) {
+        log(LOG_LEVEL_WARN, "Found MADT x2APIC record that is shorter than expected (%#x/%#zx)", record->length, sizeof(madt_record_x2apic_t));
+        return nullptr;
+    }
+
+    madt_record_x2apic_t *lapic_record = (madt_record_x2apic_t *) record;
+    if((lapic_record->flags & LAPIC_FLAG_ENABLED) == 0) return nullptr;
+
+    smp_cpu_t *cpu = heap_alloc(sizeof(smp_cpu_t));
+    cpu->init_failed = false;
+    cpu->park_address = nullptr;
+    cpu->lapic_id = lapic_record->lapic_id;
+    cpu->is_bsp = lapic_record->lapic_id == firmware_get()->boot_cpu_id;
+    return cpu;
+}
 #endif
 
 #if defined(__ARCH_AARCH64)
@@ -88,7 +105,7 @@ smp_cpu_t *smp_discover_cpus_acpi() {
         switch(record->type) {
 #if defined(__ARCH_X86_64)
             case MADT_LAPIC:   cpu = parse_lapic_entry(record); break;
-            case MADT_LX2APIC: log(LOG_LEVEL_WARN, "x2APIC not currently supported, ignoring MADT entry"); break;
+            case MADT_LX2APIC: cpu = parse_x2apic_entry(record); break;
 #endif
 #if defined(__ARCH_AARCH64)
             case MADT_GICC: cpu = parse_gicc_entry(record); break;
@@ -143,10 +160,7 @@ smp_cpu_t *smp_discover_cpus_device_tree() {
         cpu->init_failed = false;
         cpu->park_address = nullptr;
         cpu->hartid = hart_id;
-        if(cpu->hartid == firmware_get()->boot_cpu_id) {
-            cpu->is_bsp = true;
-            continue;
-        }
+        cpu->is_bsp = cpu->hartid == firmware_get()->boot_cpu_id;
     }
 
     return cpus;

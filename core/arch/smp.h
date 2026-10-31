@@ -6,7 +6,7 @@
 
 typedef struct smp_cpu {
 #ifdef __ARCH_X86_64
-    uint8_t lapic_id;
+    uint64_t lapic_id;
 #elif __ARCH_AARCH64
     uint64_t mpidr;
 #elif __ARCH_RISCV64

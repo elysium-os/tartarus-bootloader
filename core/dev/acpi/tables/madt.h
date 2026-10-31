@@ -37,6 +37,14 @@ typedef struct [[gnu::packed]] {
 typedef struct [[gnu::packed]] {
     madt_record_t base;
     uint16_t rsv0;
+    uint32_t lapic_id;
+    uint32_t flags;
+    uint32_t acpi_processor_id;
+} madt_record_x2apic_t;
+
+typedef struct [[gnu::packed]] {
+    madt_record_t base;
+    uint16_t rsv0;
     uint32_t cpu_interface_number;
     uint32_t acpi_processor_id;
     uint32_t flags;
