@@ -143,10 +143,7 @@ smp_cpu_t *smp_discover_cpus_device_tree() {
         cpu->init_failed = false;
         cpu->park_address = nullptr;
         cpu->hartid = hart_id;
-        if(cpu->hartid == firmware_get()->boot_cpu_id) {
-            cpu->is_bsp = true;
-            continue;
-        }
+        cpu->is_bsp = cpu->hartid == firmware_get()->boot_cpu_id;
     }
 
     return cpus;
