@@ -37,11 +37,11 @@ bits 32
     or eax, (1 << 12)                           ; Enable 5 level paging
     mov cr4, eax
 
+    mov cr3, edx                                ; Load page tables
+
     mov eax, cr0
     or eax, (1 << 31)
     mov cr0, eax                                ; Enable paging
-
-    mov cr3, edx                                ; Load page tables
 
     push dword 0x28
     push ebx
